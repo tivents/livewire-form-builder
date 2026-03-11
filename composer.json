@@ -1,0 +1,58 @@
+{
+    "name": "tivents/livewire-form-builder",
+    "description": "A powerful drag-and-drop form builder for Laravel 12 with Livewire 5, supporting all field types, conditional logic, multi-column layouts, and form submissions.",
+    "type": "library",
+    "keywords": ["laravel", "livewire", "form-builder", "drag-and-drop", "forms"],
+    "license": "MIT",
+    "version": "1.0.0",
+    "authors": [
+        {
+            "name": "Your Name",
+            "email": "you@example.com"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "laravel/framework": "^12.0",
+        "livewire/livewire": "^4.2"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^10.0",
+        "pestphp/pest": "^4.0",
+        "pestphp/pest-plugin-laravel": "^4.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Tivents\\LivewireFormBuilder\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tivents\\LivewireFormBuilder\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Tivents\\LivewireFormBuilder\\LivewireFormBuilderServiceProvider"
+            ],
+            "aliases": {
+                "LivewireFormBuilder": "Tivents\\LivewireFormBuilder\\Facades\\LivewireFormBuilder"
+            }
+        }
+    },
+    "scripts": {
+        "post-autoload-dump": [
+            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+            "@php artisan package:discover --ansi"
+        ],
+        "test": "vendor/bin/pest"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    }
+}
