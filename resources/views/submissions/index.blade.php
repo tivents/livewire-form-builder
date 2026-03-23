@@ -3,60 +3,61 @@
     <div class="max-w-5xl mx-auto py-8 px-4">
         <div class="flex items-center justify-between mb-6">
             <div>
-                <a href="{{ route('livewire-form-builder.forms.index') }}" class="text-sm text-gray-500 hover:text-gray-700">← Forms</a>
-                <h1 class="text-2xl font-bold text-gray-800 mt-1">{{ $form->name }} – Submissions</h1>
+                <flux:link href="{{ route('livewire-form-builder.forms.index') }}" class="text-sm text-zinc-500">
+                    ← Forms
+                </flux:link>
+                <flux:heading size="xl" class="mt-1">{{ $form->name }} – Submissions</flux:heading>
             </div>
-            <a href="{{ route('livewire-form-builder.submissions.export', $form) }}"
-               class="inline-flex items-center gap-2 bg-white border border-gray-200 text-gray-700 text-sm font-medium px-4 py-2 rounded-xl hover:bg-gray-50 transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            <flux:button href="{{ route('livewire-form-builder.submissions.export', $form) }}" variant="ghost" icon="arrow-down-tray">
                 Export CSV
-            </a>
+            </flux:button>
         </div>
 
-        <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <flux:card class="p-0 overflow-hidden">
             @if ($submissions->isEmpty())
-                <div class="py-16 text-center text-gray-400 text-sm">No submissions yet.</div>
+                <div class="py-16 text-center">
+                    <flux:text class="text-zinc-400 text-sm">No submissions yet.</flux:text>
+                </div>
             @else
-                <table class="w-full text-sm">
-                    <thead class="bg-gray-50 border-b border-gray-200">
-                        <tr>
-                            <th class="text-left px-5 py-3 font-semibold text-gray-600">#</th>
-                            <th class="text-left px-5 py-3 font-semibold text-gray-600">Submitted At</th>
-                            <th class="text-left px-5 py-3 font-semibold text-gray-600">IP</th>
-                            <th class="text-center px-5 py-3 font-semibold text-gray-600">Status</th>
-                            <th class="text-right px-5 py-3"></th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">
+                <flux:table>
+                    <flux:columns>
+                        <flux:column>#</flux:column>
+                        <flux:column>Submitted At</flux:column>
+                        <flux:column>IP</flux:column>
+                        <flux:column class="text-center">Status</flux:column>
+                        <flux:column />
+                    </flux:columns>
+                    <flux:rows>
                         @foreach ($submissions as $sub)
-                        <tr class="hover:bg-gray-50 transition-colors {{ !$sub->is_read ? 'font-semibold' : '' }}">
-                            <td class="px-5 py-3 text-gray-600">{{ $sub->id }}</td>
-                            <td class="px-5 py-3 text-gray-700">{{ $sub->created_at->format('d.m.Y H:i') }}</td>
-                            <td class="px-5 py-3 text-gray-500 font-mono text-xs">{{ $sub->ip }}</td>
-                            <td class="px-5 py-3 text-center">
+                        <flux:row class="{{ !$sub->is_read ? 'font-semibold' : '' }}">
+                            <flux:cell class="text-zinc-500">{{ $sub->id }}</flux:cell>
+                            <flux:cell class="text-zinc-700">{{ $sub->created_at->format('d.m.Y H:i') }}</flux:cell>
+                            <flux:cell class="font-mono text-xs text-zinc-400">{{ $sub->ip }}</flux:cell>
+                            <flux:cell class="text-center">
                                 @if ($sub->is_read)
-                                    <span class="text-xs text-gray-400">Read</span>
+                                    <flux:badge color="zinc" size="sm">Read</flux:badge>
                                 @else
-                                    <span class="inline-block bg-indigo-100 text-indigo-700 text-xs font-bold px-2 py-0.5 rounded-full">New</span>
+                                    <flux:badge color="indigo" size="sm">New</flux:badge>
                                 @endif
-                            </td>
-                            <td class="px-5 py-3 text-right">
+                            </flux:cell>
+                            <flux:cell class="text-right">
                                 <div class="flex items-center justify-end gap-2">
-                                    <a href="{{ route('livewire-form-builder.submissions.show', [$form, $sub]) }}"
-                                       class="text-xs px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg">View</a>
+                                    <flux:button href="{{ route('livewire-form-builder.submissions.show', [$form, $sub]) }}" size="sm" variant="ghost">
+                                        View
+                                    </flux:button>
                                     <form action="{{ route('livewire-form-builder.submissions.destroy', [$form, $sub]) }}" method="POST"
                                           onsubmit="return confirm('Delete this submission?')">
                                         @csrf @method('DELETE')
-                                        <button class="text-xs px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg">Delete</button>
+                                        <flux:button type="submit" size="sm" variant="danger">Delete</flux:button>
                                     </form>
                                 </div>
-                            </td>
-                        </tr>
+                            </flux:cell>
+                        </flux:row>
                         @endforeach
-                    </tbody>
-                </table>
-                <div class="px-5 py-4 border-t border-gray-100">{{ $submissions->links() }}</div>
+                    </flux:rows>
+                </flux:table>
+                <div class="px-5 py-4 border-t border-zinc-100">{{ $submissions->links() }}</div>
             @endif
-        </div>
+        </flux:card>
     </div>
 </x-livewire-form-builder::layout>

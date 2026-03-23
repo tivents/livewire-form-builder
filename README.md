@@ -37,6 +37,7 @@ The package ships **no Models and no Migrations**. You own your data layer. The 
 - PHP `^8.2`
 - Laravel `^12.0`
 - Livewire `^5.0`
+- Flux UI `^1.0` (`livewire/flux`)
 
 ---
 
@@ -44,6 +45,7 @@ The package ships **no Models and no Migrations**. You own your data layer. The 
 
 ```bash
 composer require tivents/livewire-form-builder
+composer require livewire/flux
 ```
 
 ### 1. Publish config
@@ -52,23 +54,56 @@ composer require tivents/livewire-form-builder
 php artisan vendor:publish --tag=livewire-form-builder-config
 ```
 
-### 2. Publish and run stubs (migration + repository)
+### 2. Publish the repository stub
 
 ```bash
 php artisan livewire-form-builder:publish-stubs
-php artisan migrate
 ```
 
-This places two files in your project:
+This places the following file in your project:
 
 | File | Purpose |
 |---|---|
-| `database/migrations/xxxx_create_livewire_form_builder_tables.php` | Creates `forms` + `form_submissions` tables |
 | `app/Repositories/LivewireFormBuilderRepository.php` | Eloquent implementation of `FormRepositoryContract` |
+
+The package ships **no migration**. Create your own migration for the `forms` and `form_submissions` tables (the stub's docblock shows the expected columns) and run `php artisan migrate` when ready.
 
 You are free to rename tables, add columns, or swap out Eloquent for anything else — as long as your repository implements the contract.
 
-### 3. Bind the repository
+### 3. Flux UI einrichten
+
+Flux muss einmalig aktiviert werden:
+
+```bash
+php artisan flux:activate
+```
+
+Flux liefert seine eigenen Styles über `@fluxStyles` und `@fluxScripts` — das wird automatisch vom Package-Layout eingebunden, wenn du die eingebauten Admin-Routen nutzt.
+
+### 4. Include the package styles (Tailwind CSS)
+
+The builder and renderer use **Tailwind CSS** classes. When you embed the components inside your own app layout, Tailwind's build step must scan the package views — otherwise the classes will be purged and the UI will be unstyled.
+
+**Tailwind v4** — add an `@source` directive to your `resources/css/app.css`:
+
+```css
+@source "../../vendor/tivents/livewire-form-builder/resources/views";
+```
+
+**Tailwind v3** — add the path to the `content` array in your `tailwind.config.js`:
+
+```js
+content: [
+    // ... your existing paths
+    './vendor/tivents/livewire-form-builder/resources/views/**/*.blade.php',
+],
+```
+
+Then rebuild your assets (`npm run dev` / `npm run build`).
+
+> **Note:** The built-in admin routes (`/livewire-form-builder`) use the package's own layout, which loads Tailwind via CDN and does not require the above. The step above is only needed when embedding `<livewire:livewire-form-builder::builder />` or `<livewire:livewire-form-builder::renderer />` inside your own Blade layouts.
+
+### 5. Bind the repository
 
 In `app/Providers/AppServiceProvider.php`:
 
@@ -222,7 +257,7 @@ Then register it:
 # Scaffold a new custom field type
 php artisan livewire-form-builder:make-field MyType
 
-# Publish migration + Eloquent repository stubs
+# Publish Eloquent repository stub
 php artisan livewire-form-builder:publish-stubs
 
 # Publish config
