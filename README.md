@@ -251,6 +251,20 @@ Then register it:
 
 ---
 
+## Examples
+
+The [`examples/`](examples/) directory contains ready-to-copy code for common integration scenarios:
+
+| File | Pattern | Use case |
+|---|---|---|
+| [`ApiWebhookRepository.php`](examples/ApiWebhookRepository.php) | Repository decorator | Saves to DB **and** POSTs a signed JSON payload to a webhook URL |
+| [`FormSubmissionListener.php`](examples/FormSubmissionListener.php) | Laravel event listener | Reacts to a `FormSubmitted` event — supports `ShouldQueue` for background processing |
+| [`api-form-page.blade.php`](examples/api-form-page.blade.php) | Client-side JS | Listens to the browser `form-submitted` event and calls any HTTP endpoint via `fetch()` |
+
+See [`examples/README.md`](examples/README.md) for setup instructions and payload shapes.
+
+---
+
 ## Artisan Commands
 
 ```bash
