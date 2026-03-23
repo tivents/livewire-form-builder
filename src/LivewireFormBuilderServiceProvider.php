@@ -23,6 +23,7 @@ use Tivents\LivewireFormBuilder\Support\FieldTypes\HtmlField;
 use Tivents\LivewireFormBuilder\Support\FieldTypes\NumberField;
 use Tivents\LivewireFormBuilder\Support\FieldTypes\RadioField;
 use Tivents\LivewireFormBuilder\Support\FieldTypes\RepeaterField;
+use Tivents\LivewireFormBuilder\Support\FieldTypes\RowField;
 use Tivents\LivewireFormBuilder\Support\FieldTypes\SelectField;
 use Tivents\LivewireFormBuilder\Support\FieldTypes\TextareaField;
 use Tivents\LivewireFormBuilder\Support\FieldTypes\TextField;
@@ -79,6 +80,7 @@ class LivewireFormBuilderServiceProvider extends ServiceProvider
         $registry->register('hidden',   HiddenField::class);
 
         // Layout / structural fields
+        $registry->register('row',     RowField::class);
         $registry->register('heading', HeadingField::class);
         $registry->register('hint',    HintField::class);
         $registry->register('html',    HtmlField::class);

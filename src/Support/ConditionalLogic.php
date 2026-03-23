@@ -77,8 +77,18 @@ class ConditionalLogic
         $map = [];
         foreach ($schema as $field) {
             $key = $field['key'] ?? null;
-            if (!$key) continue;
-            $map[$key] = self::isVisible($field, $formData);
+            if ($key) {
+                $map[$key] = self::isVisible($field, $formData);
+            }
+            // Include row children in the visibility map
+            if (($field['type'] ?? '') === 'row') {
+                foreach ($field['children'] ?? [] as $child) {
+                    $ck = $child['key'] ?? null;
+                    if ($ck) {
+                        $map[$ck] = self::isVisible($child, $formData);
+                    }
+                }
+            }
         }
         return $map;
     }

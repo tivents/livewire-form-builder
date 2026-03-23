@@ -37,7 +37,6 @@ The package ships **no Models and no Migrations**. You own your data layer. The 
 - PHP `^8.2`
 - Laravel `^12.0`
 - Livewire `^5.0`
-- Flux UI `^1.0` (`livewire/flux`)
 
 ---
 
@@ -45,7 +44,6 @@ The package ships **no Models and no Migrations**. You own your data layer. The 
 
 ```bash
 composer require tivents/livewire-form-builder
-composer require livewire/flux
 ```
 
 ### 1. Publish config
@@ -70,17 +68,7 @@ The package ships **no migration**. Create your own migration for the `forms` an
 
 You are free to rename tables, add columns, or swap out Eloquent for anything else — as long as your repository implements the contract.
 
-### 3. Flux UI einrichten
-
-Flux muss einmalig aktiviert werden:
-
-```bash
-php artisan flux:activate
-```
-
-Flux liefert seine eigenen Styles über `@fluxStyles` und `@fluxScripts` — das wird automatisch vom Package-Layout eingebunden, wenn du die eingebauten Admin-Routen nutzt.
-
-### 4. Include the package styles (Tailwind CSS)
+### 3. Include the package styles (Tailwind CSS)
 
 The builder and renderer use **Tailwind CSS** classes. When you embed the components inside your own app layout, Tailwind's build step must scan the package views — otherwise the classes will be purged and the UI will be unstyled.
 
@@ -103,7 +91,7 @@ Then rebuild your assets (`npm run dev` / `npm run build`).
 
 > **Note:** The built-in admin routes (`/livewire-form-builder`) use the package's own layout, which loads Tailwind via CDN and does not require the above. The step above is only needed when embedding `<livewire:livewire-form-builder::builder />` or `<livewire:livewire-form-builder::renderer />` inside your own Blade layouts.
 
-### 5. Bind the repository
+### 4. Bind the repository
 
 In `app/Providers/AppServiceProvider.php`:
 

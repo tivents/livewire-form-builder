@@ -10,7 +10,8 @@ The renderer fires the Livewire event `form-submitted` and calls `FormRepository
 |---|---|---|---|
 | 1 | Repository decorator | `ApiWebhookRepository.php` | Server-side webhook / all-in-one |
 | 2 | Laravel event listener | `FormSubmissionListener.php` | Queued jobs, multiple handlers |
-| 3 | Client-side JS | `api-form-page.blade.php` | Third-party SaaS, analytics, n8n/Make |
+| 3 | Controller processing | `ControllerHandlingExample.php` | Traditional controller / API routes |
+| 4 | Client-side JS | `api-form-page.blade.php` | Third-party SaaS, analytics, n8n/Make |
 
 ---
 
@@ -55,7 +56,15 @@ event(new \App\Events\FormSubmitted($submission));
 
 ---
 
-### 3 — Client-side JS (`api-form-page.blade.php`)
+### 3 — Controller processing (`ControllerHandlingExample.php`)
+
+Shows how to process a form submission through a traditional Laravel controller. This can be done by either:
+- Receiving data via an API route (triggered by the JS event).
+- Explicitly calling controller logic from an event listener.
+
+---
+
+### 4 — Client-side JS (`api-form-page.blade.php`)
 
 Listen for the browser-side `form-submitted` event and call any HTTP endpoint with `fetch()`. No PHP changes required.
 

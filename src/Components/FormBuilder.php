@@ -28,6 +28,7 @@ class FormBuilder extends Component
 
     // ─── Builder state ────────────────────────────────────────────────
     public ?int  $selectedFieldIndex = null;
+    public ?int  $selectedChildIndex = null;   // set when a row child is selected
     public ?string $dragOverIndex    = null;
     public string  $activeTab        = 'builder';  // builder | preview | json
 
@@ -124,15 +125,22 @@ class FormBuilder extends Component
 
     // ─── Field selection & deletion ──────────────────────────────────
 
-    public function selectField(int $index): void
+    public function selectField(int $index, ?int $childIndex = null): void
     {
-        $this->selectedFieldIndex = ($this->selectedFieldIndex === $index) ? null : $index;
+        if ($this->selectedFieldIndex === $index && $this->selectedChildIndex === $childIndex) {
+            $this->selectedFieldIndex = null;
+            $this->selectedChildIndex = null;
+        } else {
+            $this->selectedFieldIndex = $index;
+            $this->selectedChildIndex = $childIndex;
+        }
     }
 
     public function deleteField(int $index): void
     {
         array_splice($this->schema, $index, 1);
         $this->selectedFieldIndex = null;
+        $this->selectedChildIndex = null;
     }
 
     public function duplicateField(int $index): void
@@ -155,36 +163,81 @@ class FormBuilder extends Component
         $this->schema[$fieldIndex]['options'][$optionIndex][$prop] = $value;
     }
 
-    public function addFieldOption(int $fieldIndex): void
+    public function addFieldOption(int $fieldIndex, ?int $childIndex = null): void
     {
-        $n = count($this->schema[$fieldIndex]['options'] ?? []) + 1;
-        $this->schema[$fieldIndex]['options'][] = [
-            'label' => "Option $n",
-            'value' => 'option_' . $n,
-        ];
+        if ($childIndex !== null) {
+            $n = count($this->schema[$fieldIndex]['children'][$childIndex]['options'] ?? []) + 1;
+            $this->schema[$fieldIndex]['children'][$childIndex]['options'][] = ['label' => "Option $n", 'value' => 'option_' . $n];
+        } else {
+            $n = count($this->schema[$fieldIndex]['options'] ?? []) + 1;
+            $this->schema[$fieldIndex]['options'][] = ['label' => "Option $n", 'value' => 'option_' . $n];
+        }
     }
 
-    public function removeFieldOption(int $fieldIndex, int $optionIndex): void
+    public function removeFieldOption(int $fieldIndex, int $optionIndex, ?int $childIndex = null): void
     {
-        array_splice($this->schema[$fieldIndex]['options'], $optionIndex, 1);
+        if ($childIndex !== null) {
+            array_splice($this->schema[$fieldIndex]['children'][$childIndex]['options'], $optionIndex, 1);
+        } else {
+            array_splice($this->schema[$fieldIndex]['options'], $optionIndex, 1);
+        }
     }
 
     // ─── Conditions ──────────────────────────────────────────────────
 
-    public function addCondition(int $fieldIndex): void
+    public function addCondition(int $fieldIndex, ?int $childIndex = null): void
     {
-        $this->schema[$fieldIndex]['conditions']['rules'][] = [
-            'field'    => '',
-            'operator' => '==',
-            'value'    => '',
-        ];
-        $this->schema[$fieldIndex]['conditions']['action'] ??= 'show';
-        $this->schema[$fieldIndex]['conditions']['logic']  ??= 'and';
+        $rule = ['field' => '', 'operator' => '==', 'value' => ''];
+        if ($childIndex !== null) {
+            $this->schema[$fieldIndex]['children'][$childIndex]['conditions']['rules'][] = $rule;
+            $this->schema[$fieldIndex]['children'][$childIndex]['conditions']['action'] ??= 'show';
+            $this->schema[$fieldIndex]['children'][$childIndex]['conditions']['logic']  ??= 'and';
+        } else {
+            $this->schema[$fieldIndex]['conditions']['rules'][] = $rule;
+            $this->schema[$fieldIndex]['conditions']['action'] ??= 'show';
+            $this->schema[$fieldIndex]['conditions']['logic']  ??= 'and';
+        }
     }
 
-    public function removeCondition(int $fieldIndex, int $ruleIndex): void
+    public function removeCondition(int $fieldIndex, int $ruleIndex, ?int $childIndex = null): void
     {
-        array_splice($this->schema[$fieldIndex]['conditions']['rules'], $ruleIndex, 1);
+        if ($childIndex !== null) {
+            array_splice($this->schema[$fieldIndex]['children'][$childIndex]['conditions']['rules'], $ruleIndex, 1);
+        } else {
+            array_splice($this->schema[$fieldIndex]['conditions']['rules'], $ruleIndex, 1);
+        }
+    }
+
+    // ─── Row children ────────────────────────────────────────────────
+
+    public function addFieldToRow(int $rowIndex, string $type): void
+    {
+        if (!isset($this->schema[$rowIndex]) || ($this->schema[$rowIndex]['type'] ?? '') !== 'row') return;
+
+        $registry = app(FieldRegistry::class);
+        $class    = $registry->get($type);
+
+        $config        = $class::defaultConfig();
+        $config['key'] = $this->generateKey($type);
+        $config['type']= $type;
+
+        $this->schema[$rowIndex]['children'][] = $config;
+        $newChildIndex = count($this->schema[$rowIndex]['children']) - 1;
+
+        $this->selectedFieldIndex = $rowIndex;
+        $this->selectedChildIndex = $newChildIndex;
+        $this->dispatch('field-added', index: $rowIndex);
+    }
+
+    public function removeFieldFromRow(int $rowIndex, int $childIndex): void
+    {
+        if (!isset($this->schema[$rowIndex]['children'][$childIndex])) return;
+
+        array_splice($this->schema[$rowIndex]['children'], $childIndex, 1);
+
+        if ($this->selectedFieldIndex === $rowIndex && $this->selectedChildIndex === $childIndex) {
+            $this->selectedChildIndex = null;
+        }
     }
 
     // ─── Repeater children ───────────────────────────────────────────
@@ -285,23 +338,39 @@ class FormBuilder extends Component
     public function getSelectedFieldProperty(): ?array
     {
         if ($this->selectedFieldIndex === null) return null;
+        if ($this->selectedChildIndex !== null) {
+            return $this->schema[$this->selectedFieldIndex]['children'][$this->selectedChildIndex] ?? null;
+        }
         return $this->schema[$this->selectedFieldIndex] ?? null;
     }
 
     public function getFieldKeysProperty(): array
     {
-        return collect($this->schema)
-            ->filter(fn ($f) => !in_array($f['type'] ?? '', ['heading', 'hint', 'html']))
-            ->pluck('label', 'key')
-            ->toArray();
+        $keys = [];
+        $skip = ['heading', 'hint', 'html', 'row'];
+        foreach ($this->schema as $field) {
+            $type = $field['type'] ?? '';
+            if ($type === 'row') {
+                foreach ($field['children'] ?? [] as $child) {
+                    $ct = $child['type'] ?? '';
+                    if (!in_array($ct, $skip) && isset($child['key'])) {
+                        $keys[$child['key']] = $child['label'] ?? $child['key'];
+                    }
+                }
+            } elseif (!in_array($type, $skip) && isset($field['key'])) {
+                $keys[$field['key']] = $field['label'] ?? $field['key'];
+            }
+        }
+        return $keys;
     }
 
     public function render()
     {
         return view('livewire-form-builder::builder.index', [
-            'palette'       => $this->palette,
-            'selectedField' => $this->selectedField,
-            'fieldKeys'     => $this->fieldKeys,
+            'palette'            => $this->palette,
+            'selectedField'      => $this->selectedField,
+            'selectedChildIndex' => $this->selectedChildIndex,
+            'fieldKeys'          => $this->fieldKeys,
         ]);
     }
 }

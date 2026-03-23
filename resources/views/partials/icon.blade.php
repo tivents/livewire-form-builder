@@ -10,6 +10,7 @@
         'heroicon-o-calendar-days'      => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>',
         'heroicon-o-paper-clip'         => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>',
         'heroicon-o-rectangle-stack'    => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6h12M6 10h12M6 14h12M6 18h12"/>',
+        'heroicon-o-view-columns'       => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5h7v14H4V5zm9 0h7v14h-7V5z"/>',
         'heroicon-o-h1'                 => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/>',
         'heroicon-o-information-circle' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>',
         'heroicon-o-code-bracket'       => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>',

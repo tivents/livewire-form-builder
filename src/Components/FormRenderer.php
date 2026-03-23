@@ -55,6 +55,13 @@ class FormRenderer extends Component
 
         // Initialise formData keys so wire:model doesn't fail on first render
         foreach ($this->schema as $field) {
+            if (($field['type'] ?? '') === 'row') {
+                foreach ($field['children'] ?? [] as $child) {
+                    $ck = $child['key'] ?? null;
+                    if ($ck) $this->formData[$ck] = $child['default'] ?? null;
+                }
+                continue;
+            }
             $key = $field['key'] ?? null;
             if (!$key) continue;
             $this->formData[$key] = $field['default'] ?? null;
@@ -125,7 +132,23 @@ class FormRenderer extends Component
             $key  = $field['key'] ?? null;
             $type = $field['type'] ?? null;
 
-            if (!$key || !$type) continue;
+            if (!$type) continue;
+
+            // Row: validate children directly as flat top-level fields
+            if ($type === 'row') {
+                foreach ($field['children'] ?? [] as $child) {
+                    $ck = $child['key'] ?? null;
+                    $ct = $child['type'] ?? null;
+                    if (!$ck || !$ct || !$registry->has($ct)) continue;
+                    if (!($visibilityMap[$ck] ?? true)) continue;
+                    $childType  = $registry->make($ct);
+                    $childRules = $childType->validationRules($child);
+                    if ($childRules) $rules[$ck] = $childRules;
+                }
+                continue;
+            }
+
+            if (!$key) continue;
             if (!($visibilityMap[$key] ?? true)) continue;  // skip hidden fields
 
             if (!$registry->has($type)) continue;
@@ -159,6 +182,17 @@ class FormRenderer extends Component
     protected function validateField(string $fieldKey): void
     {
         $field = collect($this->schema)->firstWhere('key', $fieldKey);
+
+        // If not found at top level, search inside row children
+        if (!$field) {
+            foreach ($this->schema as $f) {
+                if (($f['type'] ?? '') === 'row') {
+                    $found = collect($f['children'] ?? [])->firstWhere('key', $fieldKey);
+                    if ($found) { $field = $found; break; }
+                }
+            }
+        }
+
         if (!$field) return;
 
         $registry  = app(FieldRegistry::class);
