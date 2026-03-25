@@ -9,6 +9,7 @@ use Tivents\LivewireFormBuilder\Commands\MakeFieldTypeCommand;
 use Tivents\LivewireFormBuilder\Commands\PublishStubsCommand;
 use Tivents\LivewireFormBuilder\Components\FormBuilder;
 use Tivents\LivewireFormBuilder\Components\FormRenderer;
+use Tivents\LivewireFormBuilder\Components\SubmissionsViewer;
 use Tivents\LivewireFormBuilder\Contracts\FormRepositoryContract;
 use Tivents\LivewireFormBuilder\Support\FieldRegistry;
 use Tivents\LivewireFormBuilder\Support\FieldTypes\CheckboxField;
@@ -95,17 +96,19 @@ class LivewireFormBuilderServiceProvider extends ServiceProvider
     protected function registerLivewireComponents(): void
     {
         // Store class→name mapping so Livewire::test(ClassName) can reverse-lookup the tag name.
-        Livewire::component('livewire-form-builder::builder',  FormBuilder::class);
-        Livewire::component('livewire-form-builder::renderer', FormRenderer::class);
+        Livewire::component('livewire-form-builder::builder',     FormBuilder::class);
+        Livewire::component('livewire-form-builder::renderer',    FormRenderer::class);
+        Livewire::component('livewire-form-builder::submissions', SubmissionsViewer::class);
 
         // Livewire 4 does not check classComponents for namespaced (::) component names in
         // resolveClassComponentClassName — it only checks classNamespaces. Register a fallback
         // resolver so the name→class lookup succeeds for both tag rendering and Livewire::test().
         Livewire::resolveMissingComponent(function (string $name): ?string {
             return match ($name) {
-                'livewire-form-builder::builder'  => FormBuilder::class,
-                'livewire-form-builder::renderer' => FormRenderer::class,
-                default                           => null,
+                'livewire-form-builder::builder'     => FormBuilder::class,
+                'livewire-form-builder::renderer'    => FormRenderer::class,
+                'livewire-form-builder::submissions' => SubmissionsViewer::class,
+                default                              => null,
             };
         });
     }

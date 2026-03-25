@@ -28,7 +28,7 @@ The package ships **no Models and no Migrations**. You own your data layer. The 
 | Group | Types |
 |---|---|
 | **Inputs** | `text`, `textarea`, `number`, `select`, `checkbox`, `radio`, `toggle`, `datetime`, `file`, `repeater`, `hidden` |
-| **Layout** | `heading`, `hint`, `html`, `divider` |
+| **Layout** | `heading`, `hint`, `html`, `divider`, `row` |
 
 ---
 
@@ -213,6 +213,35 @@ Then register it:
 
 ---
 
+## Row / Column Layout
+
+Fields support a flat `width` property (`full`, `1/2`, `1/3`, `2/3`, `1/4`, `3/4`) that positions them on a shared 12-column grid. For explicit structural grouping, use the `row` field type as a container.
+
+A `row` is always full-width itself and renders a nested 12-column grid for its `children`. Fields inside a row use the same `width` values.
+
+**When to use `row`:**
+- You want to move or delete a group of fields as a unit in the builder
+- You need semantically grouped columns (e.g. first name + last name side by side)
+- You want to mix different widths within a clearly bounded section
+
+**Schema structure:**
+
+```json
+{
+  "type": "row",
+  "key": "name_row",
+  "width": "full",
+  "children": [
+    { "type": "text", "key": "first_name", "label": "First Name", "required": true, "width": "1/2" },
+    { "type": "text", "key": "last_name",  "label": "Last Name",  "required": true, "width": "1/2" }
+  ]
+}
+```
+
+Children support all standard field properties (validation, conditional logic, etc.). The `row` field itself carries no validation rules.
+
+---
+
 ## JSON Schema Format
 
 ```json
@@ -220,8 +249,13 @@ Then register it:
   "name": "Kontaktformular",
   "schema": [
     { "type": "heading", "key": "h1", "text": "Kontakt", "level": "h2", "width": "full" },
-    { "type": "text",    "key": "name_abc", "label": "Name",  "required": true, "width": "1/2" },
-    { "type": "text",    "key": "email_xyz","label": "E-Mail","required": true, "width": "1/2", "input_type": "email" },
+    {
+      "type": "row", "key": "name_row", "width": "full",
+      "children": [
+        { "type": "text", "key": "name_abc",  "label": "Name",   "required": true, "width": "1/2" },
+        { "type": "text", "key": "email_xyz", "label": "E-Mail", "required": true, "width": "1/2", "input_type": "email" }
+      ]
+    },
     {
       "type": "select", "key": "topic_def", "label": "Thema", "width": "full",
       "options": [{ "label": "Vertrieb", "value": "sales" }, { "label": "Support", "value": "support" }]
@@ -248,6 +282,7 @@ The [`examples/`](examples/) directory contains ready-to-copy code for common in
 | [`ApiWebhookRepository.php`](examples/ApiWebhookRepository.php) | Repository decorator | Saves to DB **and** POSTs a signed JSON payload to a webhook URL |
 | [`FormSubmissionListener.php`](examples/FormSubmissionListener.php) | Laravel event listener | Reacts to a `FormSubmitted` event — supports `ShouldQueue` for background processing |
 | [`api-form-page.blade.php`](examples/api-form-page.blade.php) | Client-side JS | Listens to the browser `form-submitted` event and calls any HTTP endpoint via `fetch()` |
+| [`CentralApiFormRepository.php`](examples/CentralApiFormRepository.php) | Central API repository | Full repository backed entirely by an HTTP API — no local DB needed; for multi-system setups |
 
 See [`examples/README.md`](examples/README.md) for setup instructions and payload shapes.
 

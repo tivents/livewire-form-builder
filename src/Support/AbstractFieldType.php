@@ -69,4 +69,21 @@ abstract class AbstractFieldType implements FieldTypeContract
             default => 'col-span-12',
         };
     }
+
+    /**
+     * Inline grid-column style — framework-agnostic alternative to widthClass().
+     * Use this when the host app's CSS (Bootstrap etc.) may override col-span-* classes.
+     */
+    public static function widthStyle(string $width): string
+    {
+        $span = match ($width) {
+            '1/2'  => 6,
+            '1/3'  => 4,
+            '2/3'  => 8,
+            '1/4'  => 3,
+            '3/4'  => 9,
+            default => 12,
+        };
+        return "grid-column: span {$span} / span {$span};";
+    }
 }

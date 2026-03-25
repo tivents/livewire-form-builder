@@ -18,13 +18,16 @@ use Tivents\LivewireFormBuilder\Support\FieldRegistry;
 class FormBuilder extends Component
 {
     // ─── Form meta ────────────────────────────────────────────────────
-    public ?int    $formId   = null;
+    public int|string|null $formId = null;
     public string  $name     = '';
     public string  $description = '';
     public bool    $isActive = true;
 
     // ─── Schema: flat list of field configs ───────────────────────────
     public array $schema = [];
+
+    // ─── Form-level settings ──────────────────────────────────────────
+    public array $settings = ['button_color' => 'green', 'button_align' => 'left', 'button_label' => 'Submit'];
 
     // ─── Builder state ────────────────────────────────────────────────
     public ?int  $selectedFieldIndex = null;
@@ -38,17 +41,81 @@ class FormBuilder extends Component
 
     // ─── Lifecycle ────────────────────────────────────────────────────
 
-    public function mount(?int $formId = null): void
+    public function mount(int|string|null $formId = null): void
     {
         if ($formId) {
             $repo = app(FormRepositoryContract::class);
             $form = $repo->findOrFail($formId);
-            $this->formId      = $form->id;
-            $this->name        = $form->name;
+            $this->formId      = $formId;
+            $this->name        = $form->name ?? '';
             $this->description = $form->description ?? '';
-            $this->isActive    = (bool) $form->is_active;
-            $this->schema      = is_array($form->schema) ? $form->schema : (json_decode($form->schema, true) ?? []);
+
+            if(isset($form->schema)) {
+                $this->schema = is_array($form->schema) ? $form->schema : (json_decode($form->schema, true) ?? []);
+            } else {
+                $this->schema = [];
+            }
+
+            if (isset($form->settings)) {
+                $loaded = is_array($form->settings) ? $form->settings : (json_decode($form->settings, true) ?? []);
+                $this->settings = array_merge($this->settings, $loaded);
+            }
         }
+    }
+
+    // ─── Palette: standard presets ───────────────────────────────────
+
+    public function addPreset(string $presetKey, ?int $afterIndex = null): void
+    {
+        $presets = $this->getPresets();
+        if (!isset($presets[$presetKey])) return;
+
+        $config = $presets[$presetKey];
+
+        // Avoid duplicate keys — append random suffix if key already used
+        $existingKeys = array_column($this->schema, 'key');
+        if (in_array($config['key'], $existingKeys)) {
+            $config['key'] = $config['key'] . '_' . Str::random(4);
+        }
+
+        if ($afterIndex !== null && isset($this->schema[$afterIndex])) {
+            array_splice($this->schema, $afterIndex + 1, 0, [$config]);
+            $this->selectedFieldIndex = $afterIndex + 1;
+        } else {
+            $this->schema[] = $config;
+            $this->selectedFieldIndex = count($this->schema) - 1;
+        }
+
+        $this->dispatch('field-added', index: $this->selectedFieldIndex);
+    }
+
+    protected function getPresets(): array
+    {
+        $base = \Tivents\LivewireFormBuilder\Support\FieldTypes\TextField::defaultConfig();
+
+        return [
+            'firstName' => array_merge($base, [
+                'key'        => 'firstName',
+                'type'       => 'text',
+                'label'      => 'Vorname',
+                'input_type' => 'text',
+                'width'      => '1/2',
+            ]),
+            'lastName' => array_merge($base, [
+                'key'        => 'lastName',
+                'type'       => 'text',
+                'label'      => 'Nachname',
+                'input_type' => 'text',
+                'width'      => '1/2',
+            ]),
+            'email' => array_merge($base, [
+                'key'        => 'email',
+                'type'       => 'text',
+                'label'      => 'E-Mail',
+                'input_type' => 'email',
+                'width'      => 'full',
+            ]),
+        ];
     }
 
     // ─── Palette: add a field ─────────────────────────────────────────
@@ -158,6 +225,13 @@ class FormBuilder extends Component
         data_set($this->schema, "{$index}.{$property}", $value);
     }
 
+    public function updateChildConfig(int $rowIndex, int $childIndex, string $property, mixed $value): void
+    {
+        data_set($this->schema, "{$rowIndex}.children.{$childIndex}.{$property}", $value);
+        // Force Livewire to detect the nested array mutation
+        $this->schema = $this->schema;
+    }
+
     public function updateFieldOption(int $fieldIndex, int $optionIndex, string $prop, string $value): void
     {
         $this->schema[$fieldIndex]['options'][$optionIndex][$prop] = $value;
@@ -210,6 +284,28 @@ class FormBuilder extends Component
 
     // ─── Row children ────────────────────────────────────────────────
 
+    public function addPresetToRow(int $rowIndex, string $presetKey): void
+    {
+        if (!isset($this->schema[$rowIndex]) || ($this->schema[$rowIndex]['type'] ?? '') !== 'row') return;
+
+        $presets = $this->getPresets();
+        if (!isset($presets[$presetKey])) return;
+
+        $config = $presets[$presetKey];
+
+        $existingKeys = array_column($this->schema[$rowIndex]['children'] ?? [], 'key');
+        if (in_array($config['key'], $existingKeys)) {
+            $config['key'] = $config['key'] . '_' . Str::random(4);
+        }
+
+        $this->schema[$rowIndex]['children'][] = $config;
+        $newChildIndex = count($this->schema[$rowIndex]['children']) - 1;
+
+        $this->selectedFieldIndex = $rowIndex;
+        $this->selectedChildIndex = $newChildIndex;
+        $this->dispatch('field-added', index: $rowIndex);
+    }
+
     public function addFieldToRow(int $rowIndex, string $type): void
     {
         if (!isset($this->schema[$rowIndex]) || ($this->schema[$rowIndex]['type'] ?? '') !== 'row') return;
@@ -240,6 +336,18 @@ class FormBuilder extends Component
         }
     }
 
+    public function moveChildInRow(int $rowIndex, int $from, int $to): void
+    {
+        $children = $this->schema[$rowIndex]['children'] ?? [];
+        if (!isset($children[$from]) || !isset($children[$to])) return;
+
+        $child = array_splice($children, $from, 1)[0];
+        array_splice($children, $to, 0, [$child]);
+
+        $this->schema[$rowIndex]['children'] = $children;
+        $this->selectedChildIndex = $to;
+    }
+
     // ─── Repeater children ───────────────────────────────────────────
 
     public function addChildField(int $repeaterIndex, string $type): void
@@ -262,7 +370,7 @@ class FormBuilder extends Component
     public function save(): void
     {
         $this->validate([
-            'name' => 'required|string|max:255',
+            'name' => 'nullable|string|max:255',
         ]);
 
         $repo = app(FormRepositoryContract::class);
@@ -272,15 +380,15 @@ class FormBuilder extends Component
             'description' => $this->description,
             'is_active'   => $this->isActive,
             'schema'      => $this->schema,
+            'settings'    => $this->settings,
         ];
 
         $form = $this->formId
             ? $repo->update($this->formId, $data)
             : $repo->create($data);
 
-        $this->formId = $form->id;
         $this->flash('Form saved successfully!');
-        $this->dispatch('form-saved', formId: $form->id);
+        $this->dispatch('form-saved', formId: $this->formId);
     }
 
     // ─── JSON import / export ────────────────────────────────────────
@@ -368,6 +476,7 @@ class FormBuilder extends Component
     {
         return view('livewire-form-builder::builder.index', [
             'palette'            => $this->palette,
+            'presets'            => $this->getPresets(),
             'selectedField'      => $this->selectedField,
             'selectedChildIndex' => $this->selectedChildIndex,
             'fieldKeys'          => $this->fieldKeys,

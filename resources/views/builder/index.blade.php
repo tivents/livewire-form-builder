@@ -1,8 +1,68 @@
 {{-- resources/views/builder/index.blade.php --}}
+@push('styles')
+<style>
+    /* ── Scoped reset: prevent host-app CSS bleeding into the builder ── */
+    .fa-builder, .fa-builder * {
+        box-sizing: border-box;
+    }
+    .fa-builder {
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+        color: #111827;
+    }
+    /* Force flex behaviour regardless of Bootstrap/Flowbite resets */
+    .fa-builder header,
+    .fa-builder .fa-builder-header {
+        display: flex !important;
+        align-items: center !important;
+        flex-wrap: nowrap !important;
+    }
+    /* Neutralise Bootstrap heading styles inside builder */
+    .fa-builder h1, .fa-builder h2, .fa-builder h3,
+    .fa-builder h4, .fa-builder h5, .fa-builder h6 {
+        font-size: inherit;
+        font-weight: inherit;
+        line-height: inherit;
+        margin: 0;
+        padding: 0;
+        border: none;
+    }
+    /* Neutralise Bootstrap form-control / input-group overrides */
+    .fa-builder input:not([type=checkbox]):not([type=radio]),
+    .fa-builder select,
+    .fa-builder textarea {
+        display: block;
+        width: 100%;
+        padding: inherit;
+        font-size: inherit;
+        line-height: inherit;
+        background-image: none;
+        border-radius: inherit;
+    }
+    .fa-builder button {
+        display: inline-flex;
+        align-items: center;
+    }
+    .fa-builder p { margin: 0; }
+    .fa-builder ul, .fa-builder ol { margin: 0; padding: 0; list-style: none; }
+    /* Force CSS grid so col-span-* classes work regardless of Bootstrap */
+    .fa-builder .grid { display: grid !important; }
+    .fa-builder .col-span-3  { grid-column: span 3  / span 3  !important; }
+    .fa-builder .col-span-4  { grid-column: span 4  / span 4  !important; }
+    .fa-builder .col-span-6  { grid-column: span 6  / span 6  !important; }
+    .fa-builder .col-span-8  { grid-column: span 8  / span 8  !important; }
+    .fa-builder .col-span-9  { grid-column: span 9  / span 9  !important; }
+    .fa-builder .col-span-12 { grid-column: span 12 / span 12 !important; }
+    .fa-builder .grid-cols-12 { grid-template-columns: repeat(12, minmax(0, 1fr)) !important; }
+</style>
+@endpush
+
 <div
     x-data="formArchitectBuilder()"
     x-init="init()"
-    class="fa-builder flex h-screen bg-gray-50 font-sans text-sm"
+    class="fa-builder flex bg-gray-50 font-sans text-sm"
+    style="height: clamp(600px, calc(100vh - 8rem), 100vh);"
 >
     {{-- ═══════════════════ LEFT: Field Palette ═══════════════════ --}}
     <aside class="fa-palette w-64 flex-none bg-white border-r border-gray-200 flex flex-col overflow-hidden">
@@ -10,6 +70,26 @@
             <h2 class="font-semibold text-gray-700 text-xs uppercase tracking-wider">Field Types</h2>
         </div>
         <div class="flex-1 overflow-y-auto p-3 space-y-4">
+            {{-- Standard presets --}}
+            <div>
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1">Standard</p>
+                <div class="space-y-1">
+                    @foreach ($presets as $presetKey => $preset)
+                        <button
+                            type="button"
+                            wire:click="addPreset('{{ $presetKey }}')"
+                            class="group w-full flex items-center gap-2 px-3 py-2 rounded-md text-gray-600 hover:bg-indigo-50 hover:text-indigo-700 transition-colors cursor-grab active:cursor-grabbing"
+                            draggable="true"
+                            @dragstart="onPaletteDragStart($event, 'preset:{{ $presetKey }}')"
+                        >
+                            <span class="flex-none w-4 h-4 text-gray-400 group-hover:text-indigo-500">
+                                @include('livewire-form-builder::partials.icon', ['name' => 'heroicon-o-pencil'])
+                            </span>
+                            <span class="text-xs font-medium">{{ $preset['label'] }}</span>
+                        </button>
+                    @endforeach
+                </div>
+            </div>
             @php
                 $groupLabels = ['inputs' => 'Input Fields', 'layout' => 'Layout', 'advanced' => 'Advanced'];
             @endphp
@@ -43,7 +123,7 @@
     <div class="flex-1 flex flex-col overflow-hidden">
 
         {{-- Top bar --}}
-        <header class="flex items-center justify-between px-5 py-3 bg-white border-b border-gray-200 gap-4">
+        <header class="fa-builder-header flex items-center justify-between px-5 py-3 bg-white border-b border-gray-200 gap-4" style="display:flex!important;flex-wrap:nowrap!important;">
             <div class="flex items-center gap-3 flex-1 min-w-0">
                 <input
                     wire:model.live.debounce.300ms="name"
@@ -103,17 +183,19 @@
                 </div>
             @else
                 {{-- 12-column grid canvas --}}
-                <div class="grid grid-cols-12 gap-4 max-w-3xl mx-auto" id="fa-canvas">
+                <div id="fa-canvas" class="max-w-3xl mx-auto" style="display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:1rem;">
                     @foreach ($schema as $index => $field)
                         @php
-                            $widthClass = \Tivents\LivewireFormBuilder\Support\AbstractFieldType::widthClass($field['width'] ?? 'full');
+                            $widthStyle = \Tivents\LivewireFormBuilder\Support\AbstractFieldType::widthStyle($field['width'] ?? 'full');
                             $isSelected = $selectedFieldIndex === $index && $selectedChildIndex === null;
                         @endphp
 
                         @if (($field['type'] ?? '') === 'row')
                         {{-- ── Row container ── --}}
                         <div
-                            class="col-span-12 relative"
+                            wire:key="field-{{ $index }}"
+                            style="{{ $widthStyle }}"
+                            class="relative"
                             data-field-key="{{ $field['key'] }}"
                             data-index="{{ $index }}"
                             draggable="true"
@@ -148,17 +230,18 @@
 
                                 {{-- Row children grid --}}
                                 <div class="p-3">
-                                    <div class="grid grid-cols-12 gap-3"
+                                    <div style="display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:0.75rem;"
                                          @dragover.prevent.stop="onRowDragOver($event)"
                                          @dragleave="onRowDragLeave($event)"
                                          @drop.prevent.stop="onRowDrop($event, {{ $index }})">
 
                                         @forelse (($field['children'] ?? []) as $ci => $child)
                                             @php
-                                                $childWidthClass = \Tivents\LivewireFormBuilder\Support\AbstractFieldType::widthClass($child['width'] ?? 'full');
+                                                $childWidthStyle = \Tivents\LivewireFormBuilder\Support\AbstractFieldType::widthStyle($child['width'] ?? 'full');
                                                 $isChildSelected = $selectedFieldIndex === $index && $selectedChildIndex === $ci;
                                             @endphp
-                                            <div class="{{ $childWidthClass }} relative"
+                                            <div style="{{ $childWidthStyle }}" class="relative"
+                                                 wire:key="row-{{ $index }}-child-{{ $ci }}"
                                                  data-row="{{ $index }}" data-child="{{ $ci }}"
                                                  draggable="true"
                                                  @dragstart.stop="onChildDragStart($event, {{ $index }}, {{ $ci }})">
@@ -176,8 +259,21 @@
                                                     <div class="pl-3 pr-6">
                                                         @include('livewire-form-builder::partials.field-preview', ['field' => $child])
                                                     </div>
-                                                    {{-- Remove button --}}
-                                                    <div class="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 {{ $isChildSelected ? 'opacity-100' : '' }} transition-opacity">
+                                                    {{-- Move left / right + Remove --}}
+                                                    @php $rowChildCount = count($field['children'] ?? []); @endphp
+                                                    <div class="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 {{ $isChildSelected ? 'opacity-100' : '' }} transition-opacity flex items-center gap-0.5">
+                                                        @if ($ci > 0)
+                                                        <button wire:click.stop="moveChildInRow({{ $index }}, {{ $ci }}, {{ $ci - 1 }})" type="button" title="Move left"
+                                                            class="p-0.5 rounded text-gray-300 hover:text-gray-600 hover:bg-gray-100">
+                                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                                                        </button>
+                                                        @endif
+                                                        @if ($ci < $rowChildCount - 1)
+                                                        <button wire:click.stop="moveChildInRow({{ $index }}, {{ $ci }}, {{ $ci + 1 }})" type="button" title="Move right"
+                                                            class="p-0.5 rounded text-gray-300 hover:text-gray-600 hover:bg-gray-100">
+                                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                                        </button>
+                                                        @endif
                                                         <button wire:click.stop="removeFieldFromRow({{ $index }}, {{ $ci }})" type="button" title="Remove from row"
                                                             class="p-0.5 rounded text-gray-300 hover:text-red-500 hover:bg-red-50">
                                                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -199,7 +295,9 @@
                         @else
                         {{-- ── Regular field card ── --}}
                         <div
-                            class="{{ $widthClass }} relative"
+                            wire:key="field-{{ $index }}"
+                            style="{{ $widthStyle }}"
+                            class="relative"
                             data-field-key="{{ $field['key'] }}"
                             data-index="{{ $index }}"
                             draggable="true"
@@ -288,22 +386,70 @@
     </div>
 
     {{-- ═══════════════════ RIGHT: Settings Panel ═══════════════════ --}}
-    @if ($activeTab === 'builder' && $selectedField !== null)
+    @if ($activeTab === 'builder')
     <aside class="w-72 flex-none bg-white border-l border-gray-200 flex flex-col overflow-hidden">
-        <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-            <h2 class="font-semibold text-gray-700 text-xs uppercase tracking-wider">Field Settings</h2>
-            <button wire:click="selectField({{ $selectedFieldIndex }})" type="button" class="text-gray-400 hover:text-gray-600">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-            </button>
-        </div>
-        <div class="flex-1 overflow-y-auto">
-            @include('livewire-form-builder::settings.panel', [
-                'field'      => $selectedField,
-                'index'      => $selectedFieldIndex,
-                'childIndex' => $selectedChildIndex,
-                'fieldKeys'  => $fieldKeys,
-            ])
-        </div>
+        @if ($selectedField !== null)
+            <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+                <h2 class="font-semibold text-gray-700 text-xs uppercase tracking-wider">Field Settings</h2>
+                <button wire:click="selectField({{ $selectedFieldIndex }})" type="button" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto">
+                @include('livewire-form-builder::settings.panel', [
+                    'field'      => $selectedField,
+                    'index'      => $selectedFieldIndex,
+                    'childIndex' => $selectedChildIndex,
+                    'fieldKeys'  => $fieldKeys,
+                ])
+            </div>
+        @else
+            <div class="px-4 py-3 border-b border-gray-200">
+                <h2 class="font-semibold text-gray-700 text-xs uppercase tracking-wider">Form Settings</h2>
+            </div>
+            <div class="flex-1 overflow-y-auto p-4 space-y-4">
+                <div>
+                    <label class="fa-label">Description</label>
+                    <textarea wire:model.live.debounce.300ms="description" rows="2" class="fa-input" placeholder="Optional description…"></textarea>
+                </div>
+                <div class="flex items-center justify-between">
+                    <label class="fa-label mb-0">Active</label>
+                    <input type="checkbox" wire:model.live="isActive" class="rounded border-gray-300 text-indigo-600" />
+                </div>
+                <div>
+                    <label class="fa-label">Submit button label</label>
+                    <input type="text"
+                        wire:model.live.debounce.300ms="settings.button_label"
+                        class="fa-input"
+                        placeholder="Submit" />
+                </div>
+                <div>
+                    <label class="fa-label">Submit button position</label>
+                    <div class="flex gap-2 mt-1">
+                        @foreach (['left' => 'Left', 'center' => 'Center', 'right' => 'Right'] as $align => $label)
+                            <button
+                                type="button"
+                                wire:click="$set('settings.button_align', '{{ $align }}')"
+                                class="flex-1 py-1.5 text-xs rounded-lg border transition {{ ($settings['button_align'] ?? 'left') === $align ? 'bg-indigo-50 border-indigo-400 text-indigo-700 font-semibold' : 'border-gray-200 text-gray-500 hover:border-gray-300' }}"
+                            >{{ $label }}</button>
+                        @endforeach
+                    </div>
+                </div>
+                <div>
+                    <label class="fa-label">Submit button color</label>
+                    <div class="grid grid-cols-4 gap-2 mt-1">
+                        @foreach (['green' => 'bg-green-500', 'blue' => 'bg-blue-500', 'indigo' => 'bg-indigo-500', 'red' => 'bg-red-500', 'orange' => 'bg-orange-500', 'purple' => 'bg-purple-500', 'gray' => 'bg-gray-500', 'black' => 'bg-gray-900'] as $color => $bg)
+                            <button
+                                type="button"
+                                wire:click="$set('settings.button_color', '{{ $color }}')"
+                                class="h-7 rounded-lg {{ $bg }} ring-offset-1 transition {{ ($settings['button_color'] ?? 'green') === $color ? 'ring-2 ring-gray-400' : '' }}"
+                                title="{{ ucfirst($color) }}"
+                            ></button>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        @endif
     </aside>
     @endif
 </div>
@@ -348,8 +494,12 @@ function formArchitectBuilder() {
             event.currentTarget.classList.remove('ring-2', 'ring-indigo-400', 'ring-offset-1');
 
             if (this.dragSourceType === 'palette') {
-                const type = event.dataTransfer.getData('text/plain');
-                @this.addField(type, targetIndex);
+                const data = event.dataTransfer.getData('text/plain');
+                if (data.startsWith('preset:')) {
+                    @this.addPreset(data.slice(7), targetIndex);
+                } else {
+                    @this.addField(data, targetIndex);
+                }
             } else if (this.dragSourceType === 'field' && this.dragSourceIndex !== null) {
                 @this.moveField(this.dragSourceIndex, targetIndex);
             }
@@ -361,8 +511,12 @@ function formArchitectBuilder() {
 
         onCanvasDrop(event) {
             if (this.dragSourceType === 'palette') {
-                const type = event.dataTransfer.getData('text/plain');
-                @this.addField(type);
+                const data = event.dataTransfer.getData('text/plain');
+                if (data.startsWith('preset:')) {
+                    @this.addPreset(data.slice(7));
+                } else {
+                    @this.addField(data);
+                }
             }
         },
 
@@ -386,8 +540,12 @@ function formArchitectBuilder() {
         onRowDrop(event, rowIndex) {
             event.currentTarget.classList.remove('ring-2', 'ring-indigo-300', 'ring-inset');
             if (this.dragSourceType === 'palette') {
-                const type = event.dataTransfer.getData('text/plain');
-                @this.addFieldToRow(rowIndex, type);
+                const data = event.dataTransfer.getData('text/plain');
+                if (data.startsWith('preset:')) {
+                    @this.addPresetToRow(rowIndex, data.slice(7));
+                } else {
+                    @this.addFieldToRow(rowIndex, data);
+                }
             }
         },
     };

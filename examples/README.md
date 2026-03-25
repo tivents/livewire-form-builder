@@ -12,6 +12,7 @@ The renderer fires the Livewire event `form-submitted` and calls `FormRepository
 | 2 | Laravel event listener | `FormSubmissionListener.php` | Queued jobs, multiple handlers |
 | 3 | Controller processing | `ControllerHandlingExample.php` | Traditional controller / API routes |
 | 4 | Client-side JS | `api-form-page.blade.php` | Third-party SaaS, analytics, n8n/Make |
+| 5 | Central API repository | `CentralApiFormRepository.php` | Multi-system setups with a shared central API |
 
 ---
 
@@ -61,6 +62,45 @@ event(new \App\Events\FormSubmitted($submission));
 Shows how to process a form submission through a traditional Laravel controller. This can be done by either:
 - Receiving data via an API route (triggered by the JS event).
 - Explicitly calling controller logic from an event listener.
+
+---
+
+### 5 — Central API repository (`CentralApiFormRepository.php`)
+
+A standalone repository with **no local database**. Every form and submission operation goes through an HTTP API. Use this when multiple independent apps (partner backends, admin portals, …) share one central data store.
+
+```php
+// AppServiceProvider::register()
+$this->app->bind(FormRepositoryContract::class, function () {
+    return new CentralApiFormRepository(
+        baseUrl: config('services.central.url'),   // CENTRAL_API_URL in .env
+        token:   config('services.central.token'), // CENTRAL_API_TOKEN in .env
+    );
+});
+```
+
+The central API must expose the following endpoints (exact paths are configurable in the class):
+
+```
+GET    /api/forms
+POST   /api/forms
+GET    /api/forms/{id}
+PUT    /api/forms/{id}
+DELETE /api/forms/{id}
+
+POST   /api/forms/{id}/submissions
+GET    /api/forms/{id}/submissions
+GET    /api/forms/{id}/submissions/{submissionId}
+DELETE /api/submissions/{id}
+```
+
+Paginated list endpoints must return:
+```json
+{
+  "data": [ ... ],
+  "meta": { "current_page": 1, "last_page": 3, "per_page": 25, "total": 72 }
+}
+```
 
 ---
 

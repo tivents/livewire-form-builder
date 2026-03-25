@@ -22,6 +22,13 @@ class CheckboxField extends AbstractFieldType
 
     public function validationRules(array $fieldConfig): array
     {
+        $hasOptions = !empty($fieldConfig['options']);
+
+        if (!$hasOptions && !empty($fieldConfig['required'])) {
+            // Single "I agree" checkbox — must be checked
+            return ['accepted'];
+        }
+
         return parent::validationRules($fieldConfig);
     }
 }

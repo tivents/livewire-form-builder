@@ -22,9 +22,12 @@ class FormRenderer extends Component
     use WithFileUploads;
 
     // ─── Props ────────────────────────────────────────────────────────
-    public ?int    $formId   = null;
+    public int|string|null $formId = null;
     public array   $schema   = [];
     public string  $formName = '';
+
+    // ─── Form-level settings ──────────────────────────────────────────
+    public array $settings = ['button_color' => 'green', 'button_align' => 'left', 'button_label' => 'Submit'];
 
     // ─── Runtime data ─────────────────────────────────────────────────
     public array $formData        = [];
@@ -37,20 +40,38 @@ class FormRenderer extends Component
 
     // ─── Lifecycle ────────────────────────────────────────────────────
 
-    public function mount(?int $formId = null, array $schema = [], string $successMessage = ''): void
+    public function mount(int|string|null $formId = null, array $schema = [], string $successMessage = '', string $redirectUrl = ''): void
     {
-        if ($formId) {
+        // Schema passed directly → use it as-is, no repository call needed.
+        // formId may still be provided alongside schema to associate submissions.
+        if ($schema) {
+            // Accept either a flat fields array or a full form object ({ name, schema, settings, ... })
+            $this->schema   = isset($schema['schema']) ? $schema['schema'] : $schema;
+            $this->formName = $schema['name'] ?? '';
+            if (isset($schema['settings'])) {
+                $this->settings = array_merge($this->settings, $schema['settings']);
+            }
+            $this->formId = $formId;
+        } elseif ($formId) {
+            // No schema passed → fetch everything from the repository.
             $repo = app(FormRepositoryContract::class);
             $form = $repo->findOrFail($formId);
-            $this->formId   = $form->id;
+            $this->formId   = $formId;
             $this->schema   = is_array($form->schema) ? $form->schema : (json_decode($form->schema, true) ?? []);
-            $this->formName = $form->name;
-        } elseif ($schema) {
-            $this->schema = $schema;
+            $this->formName = $form->name ?? '';
+            if (isset($form->settings)) {
+                $loaded = is_array($form->settings) ? $form->settings : (json_decode($form->settings, true) ?? []);
+                $this->settings = array_merge($this->settings, $loaded);
+            }
         }
 
         if ($successMessage) {
             $this->successMessage = $successMessage;
+        }
+
+        // Prop overrides any redirect_url from schema settings
+        if ($redirectUrl) {
+            $this->settings['redirect_url'] = $redirectUrl;
         }
 
         // Initialise formData keys so wire:model doesn't fail on first render
@@ -90,7 +111,6 @@ class FormRenderer extends Component
         $rules         = $this->buildValidationRules($visibilityMap);
 
         $validator = Validator::make($this->formData, $rules);
-
         if ($validator->fails()) {
             $this->validationErrors = $validator->errors()->toArray();
             return;
@@ -117,8 +137,15 @@ class FormRenderer extends Component
             ]);
         }
 
-        $this->submitted = true;
         $this->dispatch('form-submitted', formId: $this->formId, data: $data);
+
+        $redirectUrl = $this->settings['redirect_url'] ?? null;
+        if ($redirectUrl) {
+            $this->redirect($redirectUrl, navigate: false);
+            return;
+        }
+
+        $this->submitted = true;
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────
@@ -223,6 +250,7 @@ class FormRenderer extends Component
     {
         return view('livewire-form-builder::renderer.index', [
             'visibilityMap' => $this->visibilityMap,
+            'settings'      => $this->settings,
         ]);
     }
 }

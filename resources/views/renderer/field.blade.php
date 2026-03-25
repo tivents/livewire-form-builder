@@ -39,7 +39,7 @@
         @endif
 
         {{-- Field input --}}
-        @if ($type === 'text')
+        @if ($type === 'text' || $type === 'email')
             <input
                 type="{{ $field['input_type'] ?? 'text' }}"
                 id="fa_{{ $key }}"
@@ -78,20 +78,35 @@
             </select>
 
         @elseif ($type === 'checkbox')
-            <div class="{{ !empty($field['inline']) ? 'flex flex-wrap gap-4' : 'space-y-2' }}">
-                @foreach (($field['options'] ?? []) as $opt)
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input
-                            type="checkbox"
-                            wire:model.live="formData.{{ $key }}"
-                            value="{{ $opt['value'] }}"
-                            @if(!empty($field['disabled'])) disabled @endif
-                            class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                        />
-                        <span class="text-sm text-gray-700">{{ $opt['label'] }}</span>
-                    </label>
-                @endforeach
-            </div>
+            @if (!empty($field['options']))
+                {{-- Multi-checkbox: iterate options --}}
+                <div class="{{ !empty($field['inline']) ? 'flex flex-wrap gap-4' : 'space-y-2' }}">
+                    @foreach ($field['options'] as $opt)
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                wire:model.live="formData.{{ $key }}"
+                                value="{{ $opt['value'] }}"
+                                @if(!empty($field['disabled'])) disabled @endif
+                                class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                            />
+                            <span class="text-sm text-gray-700">{{ $opt['label'] }}</span>
+                        </label>
+                    @endforeach
+                </div>
+            @else
+                {{-- Single checkbox (e.g. "I agree") — value defaults to "1" --}}
+                <label class="flex items-start gap-2 cursor-pointer">
+                    <input
+                        type="checkbox"
+                        wire:model.live="formData.{{ $key }}"
+                        value="{{ $field['value'] ?? '1' }}"
+                        @if(!empty($field['disabled'])) disabled @endif
+                        class="mt-0.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    <span class="text-sm text-gray-700">{!! $field['label'] ?? '' !!}</span>
+                </label>
+            @endif
 
         @elseif ($type === 'radio')
             <div class="{{ !empty($field['inline']) ? 'flex flex-wrap gap-4' : 'space-y-2' }}">
@@ -153,6 +168,8 @@
 
         @elseif ($type === 'hidden')
             <input type="hidden" wire:model="formData.{{ $key }}" value="{{ $field['default'] ?? '' }}" />
+
+        @elseif ($type === 'file')
             <div class="relative">
                 <input
                     type="file"
