@@ -36,7 +36,7 @@ The package ships **no Models and no Migrations**. You own your data layer. The 
 
 - PHP `^8.2`
 - Laravel `^12.0`
-- Livewire `^5.0`
+- Livewire `^4.0`
 
 ---
 
@@ -135,13 +135,82 @@ Navigate to `/livewire-form-builder` — requires the middleware configured in `
 {{-- By form ID --}}
 <livewire:livewire-form-builder::renderer :form-id="$form->id" />
 
-{{-- Inline schema (no DB needed) --}}
-<livewire:livewire-form-builder::renderer :schema="$schemaArray" />
+{{-- Inline schema (form-id still used to save the submission) --}}
+<livewire:livewire-form-builder::renderer :form-id="$product->id" :schema="$schemaArray" />
 
 {{-- Custom success message --}}
 <livewire:livewire-form-builder::renderer
     :form-id="$form->id"
     success-message="Vielen Dank für Ihre Anfrage!" />
+
+{{-- Redirect after submit --}}
+<livewire:livewire-form-builder::renderer
+    :form-id="$form->id"
+    redirect-url="{{ route('thank-you') }}" />
+
+{{-- Edit mode: pre-fill with existing submission data --}}
+<livewire:livewire-form-builder::renderer
+    :form-id="$product->id"
+    :schema="$schema"
+    :submission-id="$participant->id" />
+
+{{-- Edit mode with initial data (avoids extra API call) --}}
+<livewire:livewire-form-builder::renderer
+    :form-id="$product->id"
+    :schema="$schema"
+    :submission-id="$participant->id"
+    :initial-data="$participant->data" />
+
+{{-- Extra fields injected from the backend (not part of the schema) --}}
+<livewire:livewire-form-builder::renderer
+    :form-id="$product->id"
+    :schema="$schema"
+    :extra-fields="[
+        ['key' => 'notify_participant', 'type' => 'checkbox', 'label' => 'Teilnehmer benachrichtigen', 'value' => '1', 'width' => 'full'],
+    ]" />
+
+{{-- Show fields marked as hidden in the schema (e.g. admin backend) --}}
+<livewire:livewire-form-builder::renderer
+    :form-id="$product->id"
+    :schema="$schema"
+    :submission-id="$participant->id"
+    :show-hidden="true" />
+```
+
+#### Renderer props
+
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| `form-id` | `int\|string\|null` | `null` | Load schema from repository and associate submissions |
+| `schema` | `array` | `[]` | Pass schema directly (flat field array or full `{name, schema, settings}` object). When set, the repository is not called for schema loading. `form-id` is still used to save submissions. |
+| `submission-id` | `int\|string\|null` | `null` | Edit mode — pre-fills the form and calls `updateSubmission` on submit instead of `saveSubmission` |
+| `initial-data` | `array` | `[]` | Pre-fill data for edit mode. Skips the repository `findSubmissionOrFail` call when provided. |
+| `extra-fields` | `array` | `[]` | Additional fields injected from the backend, not part of the schema. Values are merged into the submission data. |
+| `show-hidden` | `bool` | `false` | Show fields marked as `hidden: true` in the schema (with a "Hidden field" badge). |
+| `success-message` | `string` | `'Thank you! Your response has been recorded.'` | Message shown after successful submission (no redirect). |
+| `redirect-url` | `string` | `''` | Redirect to this URL after submit instead of showing the success message. |
+
+### Listen to Livewire events
+
+```php
+// In a parent Livewire component
+#[On('form-submitted')]
+public function onFormSubmitted(int|string|null $formId, array $data): void
+{
+    // New submission — $data contains all field values incl. extra-fields
+}
+
+#[On('form-updated')]
+public function onFormUpdated(int|string $submissionId, int|string|null $formId, array $data): void
+{
+    // Existing submission was updated
+}
+
+#[On('form-saved')]
+public function onFormSaved(int|string|null $formId): void
+{
+    // Builder saved/updated a form schema
+}
 ```
 
 ### Listen to JS events
@@ -149,7 +218,10 @@ Navigate to `/livewire-form-builder` — requires the middleware configured in `
 ```javascript
 document.addEventListener('livewire:init', () => {
     Livewire.on('form-submitted', ({ formId, data }) => {
-        console.log('Submitted!', data);
+        console.log('New submission', data);
+    });
+    Livewire.on('form-updated', ({ submissionId, formId, data }) => {
+        console.log('Updated submission', submissionId, data);
     });
     Livewire.on('form-saved', ({ formId }) => {
         console.log('Builder saved form', formId);
@@ -266,10 +338,29 @@ Children support all standard field properties (validation, conditional logic, e
         "action": "show", "logic": "and",
         "rules": [{ "field": "topic_def", "operator": "!=", "value": "" }]
       }
+    },
+    {
+      "type": "text", "key": "internal_note", "label": "Interne Notiz", "hidden": true, "width": "full"
     }
   ]
 }
 ```
+
+### Field properties
+
+| Property | Description |
+|---|---|
+| `type` | Field type (see field types table) |
+| `key` | Unique identifier within the form — used as the data key in submissions |
+| `label` | Display label |
+| `width` | Column width: `full`, `1/2`, `1/3`, `2/3`, `1/4`, `3/4` |
+| `required` | `true` to make the field mandatory |
+| `hidden` | `true` to hide the field in the renderer by default. The field is still initialised and its default value is submitted. Visible when `:show-hidden="true"` is passed to the renderer. Configurable in the builder settings panel. |
+| `default` | Default value pre-filled on mount |
+| `disabled` | `true` to render the input as read-only |
+| `placeholder` | Input placeholder text |
+| `hint` | Helper text shown below the label |
+| `conditions` | Conditional logic — see below |
 
 ---
 
@@ -285,6 +376,25 @@ The [`examples/`](examples/) directory contains ready-to-copy code for common in
 | [`CentralApiFormRepository.php`](examples/CentralApiFormRepository.php) | Central API repository | Full repository backed entirely by an HTTP API — no local DB needed; for multi-system setups |
 
 See [`examples/README.md`](examples/README.md) for setup instructions and payload shapes.
+
+---
+
+## Repository Contract
+
+Your repository must implement `Tivents\LivewireFormBuilder\Contracts\FormRepositoryContract`:
+
+| Method | Description |
+|---|---|
+| `findOrFail(id)` | Return form object with at least `id`, `name`, `schema`, `settings` |
+| `create(data)` | Persist new form, return it |
+| `update(id, data)` | Update form, return it |
+| `delete(id)` | Delete form |
+| `paginate(perPage)` | Return paginated list of forms |
+| `saveSubmission(formId, data, meta)` | Store a new submission |
+| `updateSubmission(submissionId, data, meta)` | Update an existing submission (called in edit mode) |
+| `paginateSubmissions(formId, perPage)` | Return paginated submissions for a form |
+| `findSubmissionOrFail(formId, submissionId)` | Return single submission object with a `data` array property |
+| `deleteSubmission(submissionId)` | Delete submission |
 
 ---
 

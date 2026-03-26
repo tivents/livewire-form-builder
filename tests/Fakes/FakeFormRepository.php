@@ -120,4 +120,9 @@ class FakeFormRepository implements FormRepositoryContract
 
         unset(static::$submissions[$submissionId]);
     }
+
+    public function updateSubmission(int|string $submissionId, array $data, array $meta = []): object
+    {
+        // TODO: Implement updateSubmission() method.
+    }
 }

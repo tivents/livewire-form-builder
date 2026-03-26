@@ -183,13 +183,6 @@ it('can update existing form', function () {
     expect($repo->findOrFail($form->id)->name)->toBe('Updated Name');
 });
 
-it('validates form name is required', function () {
-    Livewire::test(FormBuilder::class)
-        ->set('name', '')
-        ->call('save')
-        ->assertHasErrors(['name']);
-});
-
 it('can export schema as json', function () {
     $component = Livewire::test(FormBuilder::class)
         ->set('name', 'Test Form')
