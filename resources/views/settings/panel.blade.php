@@ -46,6 +46,12 @@
                 wire:model.live="schema.{{ $sp }}.required"
                 class="rounded border-gray-300 text-indigo-600" />
         </div>
+        <div class="flex items-center justify-between">
+            <label class="fa-label mb-0">Hidden <span class="text-gray-400 font-normal">(not shown in renderer)</span></label>
+            <input type="checkbox"
+                wire:model.live="schema.{{ $sp }}.hidden"
+                class="rounded border-gray-300 text-indigo-600" />
+        </div>
         @endif
 
         {{-- Layout-specific: heading text / level --}}

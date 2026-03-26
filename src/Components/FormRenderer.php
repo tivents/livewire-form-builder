@@ -22,7 +22,9 @@ class FormRenderer extends Component
     use WithFileUploads;
 
     // ─── Props ────────────────────────────────────────────────────────
-    public int|string|null $formId = null;
+    public int|string|null $formId       = null;
+    public int|string|null $submissionId = null;
+    public bool    $showHidden = false;
     public array   $schema   = [];
     public string  $formName = '';
 
@@ -35,13 +37,25 @@ class FormRenderer extends Component
     public bool  $submitted       = false;
     public string $successMessage = 'Thank you! Your response has been recorded.';
 
+    // ─── Extra fields (injected from outside, not part of schema) ────
+    public array $extraFields = [];
+    public array $extraData   = [];
+
     // ─── File uploads (handled separately by Livewire) ───────────────
     public array $fileUploads = [];
 
     // ─── Lifecycle ────────────────────────────────────────────────────
 
-    public function mount(int|string|null $formId = null, array $schema = [], string $successMessage = '', string $redirectUrl = ''): void
-    {
+    public function mount(
+        int|string|null $formId       = null,
+        int|string|null $submissionId = null,
+        bool  $showHidden    = false,
+        array $schema        = [],
+        array $initialData   = [],
+        string $successMessage = '',
+        string $redirectUrl    = '',
+        array $extraFields     = [],
+    ): void {
         // Schema passed directly → use it as-is, no repository call needed.
         // formId may still be provided alongside schema to associate submissions.
         if ($schema) {
@@ -65,6 +79,17 @@ class FormRenderer extends Component
             }
         }
 
+        // Edit mode: store submission ID for update on submit
+        $this->submissionId = $submissionId;
+        $this->showHidden   = $showHidden;
+
+        // If editing and no initialData provided, fetch submission from repository
+        if ($submissionId && !$initialData && $this->formId) {
+            $repo        = app(FormRepositoryContract::class);
+            $submission  = $repo->findSubmissionOrFail($this->formId, $submissionId);
+            $initialData = is_array($submission->data) ? $submission->data : (json_decode($submission->data, true) ?? []);
+        }
+
         if ($successMessage) {
             $this->successMessage = $successMessage;
         }
@@ -74,18 +99,25 @@ class FormRenderer extends Component
             $this->settings['redirect_url'] = $redirectUrl;
         }
 
-        // Initialise formData keys so wire:model doesn't fail on first render
+        // Initialise extra fields
+        $this->extraFields = $extraFields;
+        foreach ($extraFields as $field) {
+            $key = $field['key'] ?? null;
+            if ($key) $this->extraData[$key] = $field['default'] ?? null;
+        }
+
+        // Initialise formData keys — prefer initialData values over field defaults
         foreach ($this->schema as $field) {
             if (($field['type'] ?? '') === 'row') {
                 foreach ($field['children'] ?? [] as $child) {
                     $ck = $child['key'] ?? null;
-                    if ($ck) $this->formData[$ck] = $child['default'] ?? null;
+                    if ($ck) $this->formData[$ck] = $initialData[$ck] ?? $child['default'] ?? null;
                 }
                 continue;
             }
             $key = $field['key'] ?? null;
             if (!$key) continue;
-            $this->formData[$key] = $field['default'] ?? null;
+            $this->formData[$key] = $initialData[$key] ?? $field['default'] ?? null;
         }
     }
 
@@ -116,8 +148,8 @@ class FormRenderer extends Component
             return;
         }
 
-        // Persist file uploads and replace the temp path with the stored path
-        $data = $this->formData;
+        // Merge extra fields into submission data
+        $data = array_merge($this->formData, $this->extraData);
         foreach ($this->fileUploads as $key => $file) {
             if ($file) {
                 $path = $file->store(
@@ -128,16 +160,21 @@ class FormRenderer extends Component
             }
         }
 
-        // Persist submission via repository (only when a formId is bound)
-        if ($this->formId) {
+        // Persist via repository
+        $meta = ['ip' => request()->ip(), 'user_agent' => request()->userAgent()];
+        if ($this->submissionId) {
+            // Edit mode: update existing submission
             $repo = app(FormRepositoryContract::class);
-            $repo->saveSubmission($this->formId, $data, [
-                'ip'         => request()->ip(),
-                'user_agent' => request()->userAgent(),
-            ]);
+            $repo->updateSubmission($this->submissionId, $data, $meta);
+            $this->dispatch('form-updated', submissionId: $this->submissionId, formId: $this->formId, data: $data);
+        } elseif ($this->formId) {
+            // Create mode: save new submission
+            $repo = app(FormRepositoryContract::class);
+            $repo->saveSubmission($this->formId, $data, $meta);
+            $this->dispatch('form-submitted', formId: $this->formId, data: $data);
+        } else {
+            $this->dispatch('form-submitted', formId: $this->formId, data: $data);
         }
-
-        $this->dispatch('form-submitted', formId: $this->formId, data: $data);
 
         $redirectUrl = $this->settings['redirect_url'] ?? null;
         if ($redirectUrl) {
@@ -251,6 +288,7 @@ class FormRenderer extends Component
         return view('livewire-form-builder::renderer.index', [
             'visibilityMap' => $this->visibilityMap,
             'settings'      => $this->settings,
+            'showHidden'    => $this->showHidden,
         ]);
     }
 }

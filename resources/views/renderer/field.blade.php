@@ -1,6 +1,8 @@
 {{-- resources/views/renderer/field.blade.php --}}
 
 @php
+    // $modelBase can be overridden to 'extraData' when rendering extra fields
+    $modelBase  = $modelBase ?? 'formData';
     $inputClass = 'block w-full rounded-lg border ' . ($error ? 'border-red-400 bg-red-50 focus:ring-red-400' : 'border-gray-300 bg-white focus:ring-indigo-400') . ' px-3 py-2 text-sm text-gray-800 shadow-sm focus:outline-none focus:ring-2 focus:border-transparent transition';
 @endphp
 
@@ -43,7 +45,7 @@
             <input
                 type="{{ $field['input_type'] ?? 'text' }}"
                 id="fa_{{ $key }}"
-                wire:model.live.debounce.300ms="formData.{{ $key }}"
+                wire:model.live.debounce.300ms="{{ $modelBase }}.{{ $key }}"
                 placeholder="{{ $field['placeholder'] ?? '' }}"
                 @if(!empty($field['min_length'])) minlength="{{ $field['min_length'] }}" @endif
                 @if(!empty($field['max_length'])) maxlength="{{ $field['max_length'] }}" @endif
@@ -54,7 +56,7 @@
         @elseif ($type === 'textarea')
             <textarea
                 id="fa_{{ $key }}"
-                wire:model.live.debounce.300ms="formData.{{ $key }}"
+                wire:model.live.debounce.300ms="{{ $modelBase }}.{{ $key }}"
                 rows="{{ $field['rows'] ?? 4 }}"
                 placeholder="{{ $field['placeholder'] ?? '' }}"
                 @if(!empty($field['disabled'])) disabled @endif
@@ -64,7 +66,7 @@
         @elseif ($type === 'select')
             <select
                 id="fa_{{ $key }}"
-                wire:model.live="formData.{{ $key }}"
+                wire:model.live="{{ $modelBase }}.{{ $key }}"
                 @if(!empty($field['multiple'])) multiple @endif
                 @if(!empty($field['disabled'])) disabled @endif
                 class="{{ $inputClass }}"
@@ -85,7 +87,7 @@
                         <label class="flex items-center gap-2 cursor-pointer">
                             <input
                                 type="checkbox"
-                                wire:model.live="formData.{{ $key }}"
+                                wire:model.live="{{ $modelBase }}.{{ $key }}"
                                 value="{{ $opt['value'] }}"
                                 @if(!empty($field['disabled'])) disabled @endif
                                 class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
@@ -99,7 +101,7 @@
                 <label class="flex items-start gap-2 cursor-pointer">
                     <input
                         type="checkbox"
-                        wire:model.live="formData.{{ $key }}"
+                        wire:model.live="{{ $modelBase }}.{{ $key }}"
                         value="{{ $field['value'] ?? '1' }}"
                         @if(!empty($field['disabled'])) disabled @endif
                         class="mt-0.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
@@ -114,7 +116,7 @@
                     <label class="flex items-center gap-2 cursor-pointer">
                         <input
                             type="radio"
-                            wire:model.live="formData.{{ $key }}"
+                            wire:model.live="{{ $modelBase }}.{{ $key }}"
                             value="{{ $opt['value'] }}"
                             @if(!empty($field['disabled'])) disabled @endif
                             class="border-gray-300 text-indigo-600 focus:ring-indigo-500"
@@ -129,7 +131,7 @@
             <input
                 type="{{ $inputType }}"
                 id="fa_{{ $key }}"
-                wire:model.live="formData.{{ $key }}"
+                wire:model.live="{{ $modelBase }}.{{ $key }}"
                 @if(!empty($field['min_date'])) min="{{ $field['min_date'] }}" @endif
                 @if(!empty($field['max_date'])) max="{{ $field['max_date'] }}" @endif
                 @if(!empty($field['disabled'])) disabled @endif
@@ -140,7 +142,7 @@
             <input
                 type="number"
                 id="fa_{{ $key }}"
-                wire:model.live.debounce.300ms="formData.{{ $key }}"
+                wire:model.live.debounce.300ms="{{ $modelBase }}.{{ $key }}"
                 placeholder="{{ $field['placeholder'] ?? '' }}"
                 @if(!is_null($field['min'] ?? null)) min="{{ $field['min'] }}" @endif
                 @if(!is_null($field['max'] ?? null)) max="{{ $field['max'] }}" @endif
@@ -163,11 +165,11 @@
                 <span class="text-sm text-gray-600">
                     {{ !empty($formData[$key]) ? ($field['on_label'] ?? 'Yes') : ($field['off_label'] ?? 'No') }}
                 </span>
-                <input type="hidden" wire:model="formData.{{ $key }}" />
+                <input type="hidden" wire:model="{{ $modelBase }}.{{ $key }}" />
             </div>
 
         @elseif ($type === 'hidden')
-            <input type="hidden" wire:model="formData.{{ $key }}" value="{{ $field['default'] ?? '' }}" />
+            <input type="hidden" wire:model="{{ $modelBase }}.{{ $key }}" value="{{ $field['default'] ?? '' }}" />
 
         @elseif ($type === 'file')
             <div class="relative">
@@ -196,7 +198,7 @@
                                     <label class="block text-xs font-medium text-gray-600 mb-1">{{ $child['label'] ?? $ck }}</label>
                                     <input
                                         type="{{ $child['input_type'] ?? 'text' }}"
-                                        wire:model.live="formData.{{ $key }}.{{ $ri }}.{{ $ck }}"
+                                        wire:model.live="{{ $modelBase }}.{{ $key }}.{{ $ri }}.{{ $ck }}"
                                         placeholder="{{ $child['placeholder'] ?? '' }}"
                                         class="{{ $inputClass }} text-xs"
                                     />

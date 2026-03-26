@@ -370,7 +370,7 @@ class FormBuilder extends Component
     public function save(): void
     {
         $this->validate([
-            'name' => 'required|string|max:255',
+            'name' => 'nullable|string|max:255',
         ]);
 
         $repo = app(FormRepositoryContract::class);
@@ -383,9 +383,12 @@ class FormBuilder extends Component
             'settings'    => $this->settings,
         ];
 
-        $form = $this->formId
-            ? $repo->update($this->formId, $data)
-            : $repo->create($data);
+        if ($this->formId) {
+            $repo->update($this->formId, $data);
+        } else {
+            $form = $repo->create($data);
+            $this->formId = $form->id ?? null;
+        }
 
         $this->flash('Form saved successfully!');
         $this->dispatch('form-saved', formId: $this->formId);

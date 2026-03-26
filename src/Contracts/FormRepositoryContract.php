@@ -72,6 +72,11 @@ interface FormRepositoryContract
     public function findSubmissionOrFail(int|string $formId, int|string $submissionId): object;
 
     /**
+     * Update an existing submission.
+     */
+    public function updateSubmission(int|string $submissionId, array $data, array $meta = []): object;
+
+    /**
      * Delete a submission.
      */
     public function deleteSubmission(int|string $submissionId): void;
