@@ -193,7 +193,7 @@
                         @if (($field['type'] ?? '') === 'row')
                         {{-- ── Row container ── --}}
                         <div
-                            wire:key="field-{{ $index }}"
+                            wire:key="field-{{ $field['key'] }}"
                             style="{{ $widthStyle }}"
                             class="relative"
                             data-field-key="{{ $field['key'] }}"
@@ -241,7 +241,7 @@
                                                 $isChildSelected = $selectedFieldIndex === $index && $selectedChildIndex === $ci;
                                             @endphp
                                             <div style="{{ $childWidthStyle }}" class="relative"
-                                                 wire:key="row-{{ $index }}-child-{{ $ci }}"
+                                                 wire:key="row-{{ $field['key'] }}-child-{{ $child['key'] }}"
                                                  data-row="{{ $index }}" data-child="{{ $ci }}"
                                                  draggable="true"
                                                  @dragstart.stop="onChildDragStart($event, {{ $index }}, {{ $ci }})">
@@ -295,7 +295,7 @@
                         @else
                         {{-- ── Regular field card ── --}}
                         <div
-                            wire:key="field-{{ $index }}"
+                            wire:key="field-{{ $field['key'] }}"
                             style="{{ $widthStyle }}"
                             class="relative"
                             data-field-key="{{ $field['key'] }}"
@@ -395,7 +395,8 @@
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
             </div>
-            <div class="flex-1 overflow-y-auto">
+            <div class="flex-1 overflow-y-auto"
+                 wire:key="settings-panel-{{ $selectedFieldIndex }}-{{ $selectedChildIndex ?? 'x' }}">
                 @include('livewire-form-builder::settings.panel', [
                     'field'      => $selectedField,
                     'index'      => $selectedFieldIndex,
