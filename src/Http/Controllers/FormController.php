@@ -32,6 +32,6 @@ class FormController extends Controller
         $this->repo->delete($formId);
         return redirect()
             ->route('livewire-form-builder.forms.index')
-            ->with('success', 'Form deleted.');
+            ->with('success', __('livewire-form-builder::messages.flash.form_deleted'));
     }
 }

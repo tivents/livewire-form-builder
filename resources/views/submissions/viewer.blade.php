@@ -45,14 +45,14 @@
                         <button
                             class="fa-sv-btn fa-sv-btn-delete"
                             wire:click="deleteSubmission('{{ $activeSubmissionId }}')"
-                            wire:confirm="Really delete this submission?"
+                            wire:confirm="{{ __('livewire-form-builder::messages.viewer.really_delete') }}"
                         >
                             <svg style="width:14px;height:14px" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                            Delete
+                            {{ __('livewire-form-builder::messages.viewer.delete') }}
                         </button>
                     @endif
                     <button class="fa-sv-btn fa-sv-btn-back" wire:click="closeDetail">
-                        ← Back
+                        {{ __('livewire-form-builder::messages.viewer.back') }}
                     </button>
                 </div>
             </div>
@@ -61,7 +61,7 @@
 
                 {{-- Extra columns (submission-level fields) --}}
                 @if (!empty($extraColumns))
-                    <p class="fa-sv-section-title">Meta</p>
+                    <p class="fa-sv-section-title">{{ __('livewire-form-builder::messages.viewer.meta') }}</p>
                     <dl class="fa-sv-dl">
                         @foreach ($extraColumns as $col)
                             @php $colVal = $activeSubmissionMeta[$col['field']] ?? null; @endphp
@@ -75,7 +75,7 @@
                             </dd>
                         @endforeach
                     </dl>
-                    <p class="fa-sv-section-title" style="margin-top:1.5rem;">Form Data</p>
+                    <p class="fa-sv-section-title" style="margin-top:1.5rem;">{{ __('livewire-form-builder::messages.viewer.form_data') }}</p>
                 @endif
 
                 {{-- Form field values --}}
@@ -115,7 +115,7 @@
         <div class="fa-sv-panel">
             <div class="fa-sv-panel-header">
                 <span class="fa-sv-panel-title">
-                    {{ $formName ?: 'Submissions' }}
+                    {{ $formName ?: __('livewire-form-builder::messages.viewer.empty') }}
                     @if ($submissions->total() > 0)
                         <span class="fa-sv-badge" style="margin-left:0.5rem;">{{ $submissions->total() }}</span>
                     @endif
@@ -123,7 +123,7 @@
             </div>
 
             @if ($submissions->isEmpty())
-                <div class="fa-sv-empty">No submissions yet.</div>
+                <div class="fa-sv-empty">{{ __('livewire-form-builder::messages.viewer.empty') }}</div>
             @else
                 <div style="overflow-x:auto;">
                     <table>
@@ -140,7 +140,7 @@
                                 @foreach (array_slice($fieldLabels, 0, $previewCount, true) as $key => $label)
                                     <th>{{ $label }}</th>
                                 @endforeach
-                                <th style="text-align:right;">Actions</th>
+                                <th style="text-align:right;">{{ __('livewire-form-builder::messages.viewer.column.actions') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -189,17 +189,17 @@
                                             wire:click="viewSubmission('{{ $sId }}')"
                                         >
                                             <svg style="width:13px;height:13px" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                            View
+                                            {{ __('livewire-form-builder::messages.viewer.view') }}
                                         </button>
                                         @if ($allowDelete)
                                             <button
                                                 class="fa-sv-btn fa-sv-btn-delete"
                                                 wire:click="deleteSubmission('{{ $sId }}')"
-                                                wire:confirm="Really delete this submission?"
+                                                wire:confirm="{{ __('livewire-form-builder::messages.viewer.really_delete') }}"
                                                 style="margin-left:0.25rem;"
                                             >
                                                 <svg style="width:13px;height:13px" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                                Delete
+                                                {{ __('livewire-form-builder::messages.viewer.delete') }}
                                             </button>
                                         @endif
                                     </td>
@@ -216,7 +216,7 @@
                             class="fa-sv-page-btn"
                             wire:click="previousPage"
                             @disabled($submissions->onFirstPage())
-                        >← Prev</button>
+                        >{{ __('livewire-form-builder::messages.viewer.prev') }}</button>
 
                         @foreach ($submissions->getUrlRange(1, $submissions->lastPage()) as $page => $url)
                             <button
@@ -229,10 +229,10 @@
                             class="fa-sv-page-btn"
                             wire:click="nextPage"
                             @disabled(!$submissions->hasMorePages())
-                        >Next →</button>
+                        >{{ __('livewire-form-builder::messages.viewer.next') }}</button>
 
                         <span style="margin-left:auto;">
-                            {{ $submissions->firstItem() }}–{{ $submissions->lastItem() }} of {{ $submissions->total() }}
+                            {{ $submissions->firstItem() }}–{{ $submissions->lastItem() }} {{ __('livewire-form-builder::messages.viewer.of') }} {{ $submissions->total() }}
                         </span>
                     </div>
                 @endif

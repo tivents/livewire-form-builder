@@ -386,7 +386,7 @@ class FormBuilder extends Component
         ]);
 
         if ($this->duplicateKeys) {
-            $this->flash('Doppelte Field Keys: ' . implode(', ', $this->duplicateKeys), 'error');
+            $this->flash(__('livewire-form-builder::messages.flash.duplicate_keys', ['keys' => implode(', ', $this->duplicateKeys)]), 'error');
             return;
         }
 
@@ -407,7 +407,7 @@ class FormBuilder extends Component
             $this->formId = $form->id ?? null;
         }
 
-        $this->flash('Form saved successfully!');
+        $this->flash(__('livewire-form-builder::messages.flash.saved'));
         $this->dispatch('form-saved', formId: $this->formId);
     }
 
@@ -427,7 +427,7 @@ class FormBuilder extends Component
         $data = json_decode($json, true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
-            $this->flash('Invalid JSON.', 'error');
+            $this->flash(__('livewire-form-builder::messages.flash.invalid_json'), 'error');
             return;
         }
 
@@ -435,7 +435,7 @@ class FormBuilder extends Component
         $this->description = $data['description'] ?? $this->description;
         $this->schema      = $data['schema']       ?? [];
         $this->selectedFieldIndex = null;
-        $this->flash('Schema imported.');
+        $this->flash(__('livewire-form-builder::messages.flash.imported'));
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────

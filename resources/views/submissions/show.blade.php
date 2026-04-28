@@ -2,7 +2,7 @@
 <x-livewire-form-builder::layout title="Submission #{{ $submission->id }}">
     <div class="max-w-2xl mx-auto py-8 px-4">
         <div class="mb-6">
-            <a href="{{ route('livewire-form-builder.submissions.index', $form) }}" class="text-sm text-gray-500 hover:text-gray-700">← Submissions</a>
+            <a href="{{ route('livewire-form-builder.submissions.index', $form) }}" class="text-sm text-gray-500 hover:text-gray-700">{{ __('livewire-form-builder::messages.submissions.back') }}</a>
             <h1 class="text-2xl font-bold text-gray-800 mt-1">{{ $form->name }} – #{{ $submission->id }}</h1>
             <p class="text-sm text-gray-500 mt-1">{{ $submission->created_at->format('d.m.Y H:i:s') }} from {{ $submission->ip }}</p>
         </div>

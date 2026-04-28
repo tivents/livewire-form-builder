@@ -67,12 +67,12 @@
     {{-- ═══════════════════ LEFT: Field Palette ═══════════════════ --}}
     <aside class="fa-palette w-64 flex-none bg-white border-r border-gray-200 flex flex-col overflow-hidden">
         <div class="px-4 py-3 border-b border-gray-200">
-            <h2 class="font-semibold text-gray-700 text-xs uppercase tracking-wider">Field Types</h2>
+            <h2 class="font-semibold text-gray-700 text-xs uppercase tracking-wider">{{ __('livewire-form-builder::messages.palette.title') }}</h2>
         </div>
         <div class="flex-1 overflow-y-auto p-3 space-y-4">
             {{-- Standard presets --}}
             <div>
-                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1">Standard</p>
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1">{{ __('livewire-form-builder::messages.palette.group.standard') }}</p>
                 <div class="space-y-1">
                     @foreach ($presets as $presetKey => $preset)
                         <button
@@ -91,7 +91,11 @@
                 </div>
             </div>
             @php
-                $groupLabels = ['inputs' => 'Input Fields', 'layout' => 'Layout', 'advanced' => 'Advanced'];
+                $groupLabels = [
+                    'inputs'   => __('livewire-form-builder::messages.palette.group.inputs'),
+                    'layout'   => __('livewire-form-builder::messages.palette.group.layout'),
+                    'advanced' => __('livewire-form-builder::messages.palette.group.advanced'),
+                ];
             @endphp
             @foreach ($palette as $group => $fields)
                 <div>
@@ -128,14 +132,18 @@
                 <input
                     wire:model.live.debounce.300ms="name"
                     type="text"
-                    placeholder="Form name…"
+                    placeholder="{{ __('livewire-form-builder::messages.builder.form_name_placeholder') }}"
                     class="text-base font-semibold text-gray-800 bg-transparent border-b border-transparent hover:border-gray-300 focus:border-indigo-500 focus:outline-none px-0 py-0.5 w-full max-w-sm"
                 />
             </div>
 
             {{-- Tab switcher --}}
             <nav class="flex gap-1 bg-gray-100 rounded-lg p-1">
-                @foreach (['builder' => 'Builder', 'preview' => 'Preview', 'json' => 'JSON'] as $tab => $label)
+                @foreach ([
+                    'builder' => __('livewire-form-builder::messages.builder.tab.builder'),
+                    'preview' => __('livewire-form-builder::messages.builder.tab.preview'),
+                    'json'    => __('livewire-form-builder::messages.builder.tab.json'),
+                ] as $tab => $label)
                     <button
                         wire:click="$set('activeTab', '{{ $tab }}')"
                         type="button"
@@ -152,7 +160,7 @@
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                 </svg>
-                Save
+                {{ __('livewire-form-builder::messages.builder.save') }}
             </button>
         </header>
 
@@ -179,7 +187,7 @@
                     <svg class="w-12 h-12 mb-3 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4"/>
                     </svg>
-                    <p class="text-sm font-medium">Drag fields here or click a type in the palette</p>
+                    <p class="text-sm font-medium">{{ __('livewire-form-builder::messages.builder.canvas.empty') }}</p>
                 </div>
             @else
                 {{-- 12-column grid canvas --}}
@@ -210,18 +218,18 @@
                                     <button wire:click.stop="selectField({{ $index }})" type="button"
                                         class="flex items-center gap-1.5 text-xs font-semibold {{ $isSelected ? 'text-indigo-500' : 'text-gray-400 hover:text-indigo-500' }} transition-colors">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5h7v14H4V5zm9 0h7v14h-7V5z"/></svg>
-                                        Row
+                                        {{ __('livewire-form-builder::messages.builder.row.label') }}
                                     </button>
                                     <div class="flex items-center gap-1">
-                                        <button wire:click.stop="moveUp({{ $index }})" type="button" title="Move up"
+                                        <button wire:click.stop="moveUp({{ $index }})" type="button" title="{{ __('livewire-form-builder::messages.builder.action.move_up') }}"
                                             class="p-1 rounded text-gray-400 hover:text-gray-700 hover:bg-white transition-colors">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
                                         </button>
-                                        <button wire:click.stop="moveDown({{ $index }})" type="button" title="Move down"
+                                        <button wire:click.stop="moveDown({{ $index }})" type="button" title="{{ __('livewire-form-builder::messages.builder.action.move_down') }}"
                                             class="p-1 rounded text-gray-400 hover:text-gray-700 hover:bg-white transition-colors">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                                         </button>
-                                        <button wire:click.stop="deleteField({{ $index }})" type="button" title="Delete row"
+                                        <button wire:click.stop="deleteField({{ $index }})" type="button" title="{{ __('livewire-form-builder::messages.builder.action.delete_row') }}"
                                             class="p-1 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                         </button>
@@ -263,18 +271,18 @@
                                                     @php $rowChildCount = count($field['children'] ?? []); @endphp
                                                     <div class="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 {{ $isChildSelected ? 'opacity-100' : '' }} transition-opacity flex items-center gap-0.5">
                                                         @if ($ci > 0)
-                                                        <button wire:click.stop="moveChildInRow({{ $index }}, {{ $ci }}, {{ $ci - 1 }})" type="button" title="Move left"
+                                                        <button wire:click.stop="moveChildInRow({{ $index }}, {{ $ci }}, {{ $ci - 1 }})" type="button" title="{{ __('livewire-form-builder::messages.builder.action.move_left') }}"
                                                             class="p-0.5 rounded text-gray-300 hover:text-gray-600 hover:bg-gray-100">
                                                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                                                         </button>
                                                         @endif
                                                         @if ($ci < $rowChildCount - 1)
-                                                        <button wire:click.stop="moveChildInRow({{ $index }}, {{ $ci }}, {{ $ci + 1 }})" type="button" title="Move right"
+                                                        <button wire:click.stop="moveChildInRow({{ $index }}, {{ $ci }}, {{ $ci + 1 }})" type="button" title="{{ __('livewire-form-builder::messages.builder.action.move_right') }}"
                                                             class="p-0.5 rounded text-gray-300 hover:text-gray-600 hover:bg-gray-100">
                                                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                                                         </button>
                                                         @endif
-                                                        <button wire:click.stop="removeFieldFromRow({{ $index }}, {{ $ci }})" type="button" title="Remove from row"
+                                                        <button wire:click.stop="removeFieldFromRow({{ $index }}, {{ $ci }})" type="button" title="{{ __('livewire-form-builder::messages.builder.action.remove_from_row') }}"
                                                             class="p-0.5 rounded text-gray-300 hover:text-red-500 hover:bg-red-50">
                                                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                                         </button>
@@ -284,7 +292,7 @@
                                             </div>
                                         @empty
                                             <div class="col-span-12 py-5 text-center text-xs text-gray-400 border-2 border-dashed border-gray-200 rounded-lg">
-                                                Drop fields here or click the Row to add fields via settings
+                                                {{ __('livewire-form-builder::messages.builder.row.empty') }}
                                             </div>
                                         @endforelse
                                     </div>
@@ -320,19 +328,19 @@
                                     @include('livewire-form-builder::partials.field-preview', ['field' => $field])
                                 </div>
                                 <div class="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 {{ $isSelected ? 'opacity-100' : '' }} transition-opacity">
-                                    <button wire:click.stop="moveUp({{ $index }})" type="button" title="Move up"
+                                    <button wire:click.stop="moveUp({{ $index }})" type="button" title="{{ __('livewire-form-builder::messages.builder.action.move_up') }}"
                                         class="p-1 rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
                                     </button>
-                                    <button wire:click.stop="moveDown({{ $index }})" type="button" title="Move down"
+                                    <button wire:click.stop="moveDown({{ $index }})" type="button" title="{{ __('livewire-form-builder::messages.builder.action.move_down') }}"
                                         class="p-1 rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                                     </button>
-                                    <button wire:click.stop="duplicateField({{ $index }})" type="button" title="Duplicate"
+                                    <button wire:click.stop="duplicateField({{ $index }})" type="button" title="{{ __('livewire-form-builder::messages.builder.action.duplicate') }}"
                                         class="p-1 rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
                                     </button>
-                                    <button wire:click.stop="deleteField({{ $index }})" type="button" title="Delete"
+                                    <button wire:click.stop="deleteField({{ $index }})" type="button" title="{{ __('livewire-form-builder::messages.builder.action.delete') }}"
                                         class="p-1 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                     </button>
@@ -351,7 +359,7 @@
         @elseif ($activeTab === 'preview')
         <div class="flex-1 overflow-y-auto p-6">
             <div class="max-w-2xl mx-auto bg-white rounded-xl border border-gray-200 shadow-sm p-8">
-                <h1 class="text-xl font-bold text-gray-800 mb-6">{{ $name ?: 'Untitled Form' }}</h1>
+                <h1 class="text-xl font-bold text-gray-800 mb-6">{{ $name ?: __('livewire-form-builder::messages.builder.preview.untitled') }}</h1>
                 <livewire:livewire-form-builder::renderer :schema="$schema" key="preview-{{ now()->timestamp }}" />
             </div>
         </div>
@@ -368,9 +376,9 @@
                     "
                     type="button"
                     class="text-xs bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 px-3 py-1.5 rounded-lg"
-                >Copy JSON</button>
+                >{{ __('livewire-form-builder::messages.builder.json.copy') }}</button>
                 <label class="text-xs bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 px-3 py-1.5 rounded-lg cursor-pointer">
-                    Import JSON
+                    {{ __('livewire-form-builder::messages.builder.json.import') }}
                     <input type="file" accept=".json" class="hidden" x-data @change="
                         const file = $event.target.files[0];
                         if (!file) return;
@@ -389,28 +397,32 @@
     @if ($activeTab === 'builder')
     <aside class="w-72 flex-none bg-white border-l border-gray-200 flex flex-col overflow-hidden">
         <div class="px-4 py-3 border-b border-gray-200">
-            <h2 class="font-semibold text-gray-700 text-xs uppercase tracking-wider">Form Settings</h2>
+            <h2 class="font-semibold text-gray-700 text-xs uppercase tracking-wider">{{ __('livewire-form-builder::messages.builder.form_settings.title') }}</h2>
         </div>
         <div class="flex-1 overflow-y-auto p-4 space-y-4">
             <div>
-                <label class="fa-label">Description</label>
-                <textarea wire:model.live.debounce.300ms="description" rows="2" class="fa-input" placeholder="Optional description…"></textarea>
+                <label class="fa-label">{{ __('livewire-form-builder::messages.builder.form_settings.description') }}</label>
+                <textarea wire:model.live.debounce.300ms="description" rows="2" class="fa-input" placeholder="{{ __('livewire-form-builder::messages.builder.form_settings.description_placeholder') }}"></textarea>
             </div>
             <div class="flex items-center justify-between">
-                <label class="fa-label mb-0">Active</label>
+                <label class="fa-label mb-0">{{ __('livewire-form-builder::messages.builder.form_settings.active') }}</label>
                 <input type="checkbox" wire:model.live="isActive" class="rounded border-gray-300 text-indigo-600" />
             </div>
             <div>
-                <label class="fa-label">Submit button label</label>
+                <label class="fa-label">{{ __('livewire-form-builder::messages.builder.form_settings.button_label') }}</label>
                 <input type="text"
                     wire:model.live.debounce.300ms="settings.button_label"
                     class="fa-input"
-                    placeholder="Submit" />
+                    placeholder="{{ __('livewire-form-builder::messages.builder.form_settings.button_label_placeholder') }}" />
             </div>
             <div>
-                <label class="fa-label">Submit button position</label>
+                <label class="fa-label">{{ __('livewire-form-builder::messages.builder.form_settings.button_position') }}</label>
                 <div class="flex gap-2 mt-1">
-                    @foreach (['left' => 'Left', 'center' => 'Center', 'right' => 'Right'] as $align => $label)
+                    @foreach ([
+                        'left'   => __('livewire-form-builder::messages.builder.form_settings.align.left'),
+                        'center' => __('livewire-form-builder::messages.builder.form_settings.align.center'),
+                        'right'  => __('livewire-form-builder::messages.builder.form_settings.align.right'),
+                    ] as $align => $label)
                         <button
                             type="button"
                             wire:click="$set('settings.button_align', '{{ $align }}')"
@@ -420,7 +432,7 @@
                 </div>
             </div>
             <div>
-                <label class="fa-label">Submit button color</label>
+                <label class="fa-label">{{ __('livewire-form-builder::messages.builder.form_settings.button_color') }}</label>
                 <div class="grid grid-cols-4 gap-2 mt-1">
                     @foreach (['green' => 'bg-green-500', 'blue' => 'bg-blue-500', 'indigo' => 'bg-indigo-500', 'red' => 'bg-red-500', 'orange' => 'bg-orange-500', 'purple' => 'bg-purple-500', 'gray' => 'bg-gray-500', 'black' => 'bg-gray-900'] as $color => $bg)
                         <button
@@ -450,7 +462,7 @@
              style="max-height: min(85vh, 720px);">
             {{-- Header --}}
             <div class="flex items-center justify-between px-5 py-4 border-b border-gray-200 flex-none">
-                <h2 class="font-semibold text-gray-800 text-sm">Field Settings</h2>
+                <h2 class="font-semibold text-gray-800 text-sm">{{ __('livewire-form-builder::messages.builder.field_settings.title') }}</h2>
                 <button
                     wire:click="selectField({{ $selectedFieldIndex }})"
                     type="button"

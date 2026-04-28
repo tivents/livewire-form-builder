@@ -29,7 +29,7 @@ class SubmissionController extends Controller
         $this->repo->deleteSubmission($submissionId);
         return redirect()
             ->route('livewire-form-builder.submissions.index', $formId)
-            ->with('success', 'Submission deleted.');
+            ->with('success', __('livewire-form-builder::messages.flash.submission_deleted'));
     }
 
     public function export(int|string $formId): StreamedResponse

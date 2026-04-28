@@ -57,6 +57,7 @@ class LivewireFormBuilderServiceProvider extends ServiceProvider
         $this->registerLivewireComponents();
         $this->registerBladeComponents();
         $this->loadViews();
+        $this->loadTranslations();
         $this->loadRoutes();
         $this->registerCommands();
         $this->publishAssets();
@@ -123,6 +124,11 @@ class LivewireFormBuilderServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__ . '/../resources/views', 'livewire-form-builder');
     }
 
+    protected function loadTranslations(): void
+    {
+        $this->loadTranslationsFrom(__DIR__ . '/../resources/lang', 'livewire-form-builder');
+    }
+
     protected function loadRoutes(): void
     {
         // Routes are optional — only load when builder_routes is enabled
@@ -158,6 +164,11 @@ class LivewireFormBuilderServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__ . '/../stubs' => base_path('stubs/livewire-form-builder'),
             ], 'livewire-form-builder-stubs');
+
+            // Translations
+            $this->publishes([
+                __DIR__ . '/../resources/lang' => $this->app->langPath('vendor/livewire-form-builder'),
+            ], 'livewire-form-builder-lang');
         }
     }
 }
