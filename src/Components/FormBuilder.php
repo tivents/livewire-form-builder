@@ -41,6 +41,18 @@ class FormBuilder extends Component
 
     // ─── Lifecycle ────────────────────────────────────────────────────
 
+    public function updated(string $name, mixed $value): void
+    {
+        if (preg_match('/^schema\.(\d+)\.label$/', $name, $m)) {
+            $this->schema[(int) $m[1]]['key'] = $this->generateKeyFromLabel((string) $value, (int) $m[1], null);
+        }
+
+        if (preg_match('/^schema\.(\d+)\.children\.(\d+)\.label$/', $name, $m)) {
+            $this->schema[(int) $m[1]]['children'][(int) $m[2]]['key'] =
+                $this->generateKeyFromLabel((string) $value, (int) $m[1], (int) $m[2]);
+        }
+    }
+
     public function mount(int|string|null $formId = null): void
     {
         if ($formId) {
@@ -373,6 +385,11 @@ class FormBuilder extends Component
             'name' => 'nullable|string|max:255',
         ]);
 
+        if ($this->duplicateKeys) {
+            $this->flash('Doppelte Field Keys: ' . implode(', ', $this->duplicateKeys), 'error');
+            return;
+        }
+
         $repo = app(FormRepositoryContract::class);
 
         $data = [
@@ -428,6 +445,45 @@ class FormBuilder extends Component
         return Str::snake($type) . '_' . Str::random(6);
     }
 
+    protected function generateKeyFromLabel(string $label, int $fieldIndex, ?int $childIndex): string
+    {
+        $base = Str::slug($label, '_');
+
+        if ($base === '') {
+            return $this->generateKey($this->schema[$fieldIndex]['type'] ?? 'field');
+        }
+
+        $others = $this->getAllKeysExcept($fieldIndex, $childIndex);
+
+        if (!in_array($base, $others)) {
+            return $base;
+        }
+
+        $n = 2;
+        while (in_array("{$base}_{$n}", $others)) {
+            $n++;
+        }
+
+        return "{$base}_{$n}";
+    }
+
+    protected function getAllKeysExcept(int $excludeIndex, ?int $excludeChild): array
+    {
+        $keys = [];
+        foreach ($this->schema as $i => $field) {
+            if (($field['type'] ?? '') === 'row') {
+                foreach ($field['children'] ?? [] as $ci => $child) {
+                    if ($i === $excludeIndex && $ci === $excludeChild) continue;
+                    if (isset($child['key'])) $keys[] = $child['key'];
+                }
+            } else {
+                if ($i === $excludeIndex && $excludeChild === null) continue;
+                if (isset($field['key'])) $keys[] = $field['key'];
+            }
+        }
+        return $keys;
+    }
+
     protected function flash(string $message, string $type = 'success'): void
     {
         $this->flashMessage = $message;
@@ -453,6 +509,22 @@ class FormBuilder extends Component
             return $this->schema[$this->selectedFieldIndex]['children'][$this->selectedChildIndex] ?? null;
         }
         return $this->schema[$this->selectedFieldIndex] ?? null;
+    }
+
+    public function getDuplicateKeysProperty(): array
+    {
+        $keys = [];
+        foreach ($this->schema as $field) {
+            if (($field['type'] ?? '') === 'row') {
+                foreach ($field['children'] ?? [] as $child) {
+                    if (isset($child['key'])) $keys[] = $child['key'];
+                }
+            } elseif (isset($field['key'])) {
+                $keys[] = $field['key'];
+            }
+        }
+        $counts = array_count_values($keys);
+        return array_keys(array_filter($counts, fn($c) => $c > 1));
     }
 
     public function getFieldKeysProperty(): array
@@ -483,6 +555,7 @@ class FormBuilder extends Component
             'selectedField'      => $this->selectedField,
             'selectedChildIndex' => $this->selectedChildIndex,
             'fieldKeys'          => $this->fieldKeys,
+            'duplicateKeys'      => $this->duplicateKeys,
         ]);
     }
 }

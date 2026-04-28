@@ -385,73 +385,96 @@
         @endif
     </div>
 
-    {{-- ═══════════════════ RIGHT: Settings Panel ═══════════════════ --}}
+    {{-- ═══════════════════ RIGHT: Form Settings (always visible when no field selected) ═══════════════════ --}}
     @if ($activeTab === 'builder')
     <aside class="w-72 flex-none bg-white border-l border-gray-200 flex flex-col overflow-hidden">
-        @if ($selectedField !== null)
-            <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-                <h2 class="font-semibold text-gray-700 text-xs uppercase tracking-wider">Field Settings</h2>
-                <button wire:click="selectField({{ $selectedFieldIndex }})" type="button" class="text-gray-400 hover:text-gray-600">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        <div class="px-4 py-3 border-b border-gray-200">
+            <h2 class="font-semibold text-gray-700 text-xs uppercase tracking-wider">Form Settings</h2>
+        </div>
+        <div class="flex-1 overflow-y-auto p-4 space-y-4">
+            <div>
+                <label class="fa-label">Description</label>
+                <textarea wire:model.live.debounce.300ms="description" rows="2" class="fa-input" placeholder="Optional description…"></textarea>
+            </div>
+            <div class="flex items-center justify-between">
+                <label class="fa-label mb-0">Active</label>
+                <input type="checkbox" wire:model.live="isActive" class="rounded border-gray-300 text-indigo-600" />
+            </div>
+            <div>
+                <label class="fa-label">Submit button label</label>
+                <input type="text"
+                    wire:model.live.debounce.300ms="settings.button_label"
+                    class="fa-input"
+                    placeholder="Submit" />
+            </div>
+            <div>
+                <label class="fa-label">Submit button position</label>
+                <div class="flex gap-2 mt-1">
+                    @foreach (['left' => 'Left', 'center' => 'Center', 'right' => 'Right'] as $align => $label)
+                        <button
+                            type="button"
+                            wire:click="$set('settings.button_align', '{{ $align }}')"
+                            class="flex-1 py-1.5 text-xs rounded-lg border transition {{ ($settings['button_align'] ?? 'left') === $align ? 'bg-indigo-50 border-indigo-400 text-indigo-700 font-semibold' : 'border-gray-200 text-gray-500 hover:border-gray-300' }}"
+                        >{{ $label }}</button>
+                    @endforeach
+                </div>
+            </div>
+            <div>
+                <label class="fa-label">Submit button color</label>
+                <div class="grid grid-cols-4 gap-2 mt-1">
+                    @foreach (['green' => 'bg-green-500', 'blue' => 'bg-blue-500', 'indigo' => 'bg-indigo-500', 'red' => 'bg-red-500', 'orange' => 'bg-orange-500', 'purple' => 'bg-purple-500', 'gray' => 'bg-gray-500', 'black' => 'bg-gray-900'] as $color => $bg)
+                        <button
+                            type="button"
+                            wire:click="$set('settings.button_color', '{{ $color }}')"
+                            class="h-7 rounded-lg {{ $bg }} ring-offset-1 transition {{ ($settings['button_color'] ?? 'green') === $color ? 'ring-2 ring-gray-400' : '' }}"
+                            title="{{ ucfirst($color) }}"
+                        ></button>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+    </aside>
+    @endif
+
+    {{-- ═══════════════════ MODAL: Field Settings ═══════════════════ --}}
+    @if ($activeTab === 'builder' && $selectedField !== null)
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        {{-- Backdrop --}}
+        <div
+            class="absolute inset-0 bg-black/30 backdrop-blur-sm"
+            wire:click="selectField({{ $selectedFieldIndex }})"
+        ></div>
+
+        {{-- Modal box --}}
+        <div class="relative z-10 bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col overflow-hidden"
+             style="max-height: min(85vh, 720px);">
+            {{-- Header --}}
+            <div class="flex items-center justify-between px-5 py-4 border-b border-gray-200 flex-none">
+                <h2 class="font-semibold text-gray-800 text-sm">Field Settings</h2>
+                <button
+                    wire:click="selectField({{ $selectedFieldIndex }})"
+                    type="button"
+                    class="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
                 </button>
             </div>
+
+            {{-- Content --}}
             <div class="flex-1 overflow-y-auto"
-                 wire:key="settings-panel-{{ $selectedFieldIndex }}-{{ $selectedChildIndex ?? 'x' }}">
+                 wire:key="settings-modal-{{ $selectedFieldIndex }}-{{ $selectedChildIndex ?? 'x' }}">
                 @include('livewire-form-builder::settings.panel', [
-                    'field'      => $selectedField,
-                    'index'      => $selectedFieldIndex,
-                    'childIndex' => $selectedChildIndex,
-                    'fieldKeys'  => $fieldKeys,
+                    'field'         => $selectedField,
+                    'index'         => $selectedFieldIndex,
+                    'childIndex'    => $selectedChildIndex,
+                    'fieldKeys'     => $fieldKeys,
+                    'duplicateKeys' => $duplicateKeys,
                 ])
             </div>
-        @else
-            <div class="px-4 py-3 border-b border-gray-200">
-                <h2 class="font-semibold text-gray-700 text-xs uppercase tracking-wider">Form Settings</h2>
-            </div>
-            <div class="flex-1 overflow-y-auto p-4 space-y-4">
-                <div>
-                    <label class="fa-label">Description</label>
-                    <textarea wire:model.live.debounce.300ms="description" rows="2" class="fa-input" placeholder="Optional description…"></textarea>
-                </div>
-                <div class="flex items-center justify-between">
-                    <label class="fa-label mb-0">Active</label>
-                    <input type="checkbox" wire:model.live="isActive" class="rounded border-gray-300 text-indigo-600" />
-                </div>
-                <div>
-                    <label class="fa-label">Submit button label</label>
-                    <input type="text"
-                        wire:model.live.debounce.300ms="settings.button_label"
-                        class="fa-input"
-                        placeholder="Submit" />
-                </div>
-                <div>
-                    <label class="fa-label">Submit button position</label>
-                    <div class="flex gap-2 mt-1">
-                        @foreach (['left' => 'Left', 'center' => 'Center', 'right' => 'Right'] as $align => $label)
-                            <button
-                                type="button"
-                                wire:click="$set('settings.button_align', '{{ $align }}')"
-                                class="flex-1 py-1.5 text-xs rounded-lg border transition {{ ($settings['button_align'] ?? 'left') === $align ? 'bg-indigo-50 border-indigo-400 text-indigo-700 font-semibold' : 'border-gray-200 text-gray-500 hover:border-gray-300' }}"
-                            >{{ $label }}</button>
-                        @endforeach
-                    </div>
-                </div>
-                <div>
-                    <label class="fa-label">Submit button color</label>
-                    <div class="grid grid-cols-4 gap-2 mt-1">
-                        @foreach (['green' => 'bg-green-500', 'blue' => 'bg-blue-500', 'indigo' => 'bg-indigo-500', 'red' => 'bg-red-500', 'orange' => 'bg-orange-500', 'purple' => 'bg-purple-500', 'gray' => 'bg-gray-500', 'black' => 'bg-gray-900'] as $color => $bg)
-                            <button
-                                type="button"
-                                wire:click="$set('settings.button_color', '{{ $color }}')"
-                                class="h-7 rounded-lg {{ $bg }} ring-offset-1 transition {{ ($settings['button_color'] ?? 'green') === $color ? 'ring-2 ring-gray-400' : '' }}"
-                                title="{{ ucfirst($color) }}"
-                            ></button>
-                        @endforeach
-                    </div>
-                </div>
-            </div>
-        @endif
-    </aside>
+        </div>
+    </div>
     @endif
 </div>
 

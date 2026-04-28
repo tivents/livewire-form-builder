@@ -22,11 +22,16 @@
                 wire:model.live.debounce.300ms="schema.{{ $sp }}.label"
                 class="fa-input" placeholder="Field label" />
         </div>
+        @php $isDuplicateKey = in_array($field['key'] ?? '', $duplicateKeys ?? []); @endphp
         <div>
             <label class="fa-label">Field Key <span class="text-gray-400 font-normal">(unique)</span></label>
             <input type="text"
                 wire:model.live.debounce.300ms="schema.{{ $sp }}.key"
-                class="fa-input font-mono text-xs" placeholder="field_key" />
+                class="fa-input font-mono text-xs {{ $isDuplicateKey ? 'border-red-400 ring-1 ring-red-300' : '' }}"
+                placeholder="field_key" />
+            @if ($isDuplicateKey)
+                <p class="mt-1 text-xs text-red-500">Dieser Key wird bereits verwendet.</p>
+            @endif
         </div>
         <div>
             <label class="fa-label">Placeholder</label>
